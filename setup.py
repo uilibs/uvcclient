@@ -9,4 +9,5 @@ setup(name='uvcclient',
       packages=['uvcclient'],
       scripts=['uvc'],
       install_requires=[],
+      tests_require=['mock'],
 )

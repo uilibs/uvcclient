@@ -79,7 +79,7 @@ class UVCRemote(object):
         data = resp.read()
         if (headers.get('content-encoding') == 'gzip' or
                 headers.get('Content-Encoding') == 'gzip'):
-            data = zlib.decompress(data, 16 + zlib.MAX_WBITS)
+            data = zlib.decompress(data, 32 + zlib.MAX_WBITS)
         return json.loads(data.decode())
 
     def dump(self, uuid):
