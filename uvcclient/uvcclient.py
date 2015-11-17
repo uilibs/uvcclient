@@ -127,7 +127,9 @@ class UVCRemote(object):
         """
         cams = self._uvc_request('/api/2.0/camera')['data']
         return [{'name': x['name'],
-                 'uuid': x['uuid']} for x in cams]
+                 'uuid': x['uuid'],
+                 'state': x['state'],
+             } for x in cams]
 
     def name_to_uuid(self, name):
         """Attempt to convert a camera name to its UUID.
@@ -220,7 +222,13 @@ def main():
         client.dump(opts.uuid)
     elif opts.list:
         for cam in client.index():
-            print('%s: %s' % (cam['uuid'], cam['name']))
+            if cam['state'] == 'DISCONNECTED':
+                status = 'offline'
+            elif cam['state'] == 'CONNECTED':
+                status = 'online'
+            else:
+                status = 'unknown:%s' % cam['state']
+            print('%s: %-24.24s [%10s]' % (cam['uuid'], cam['name'], status))
     elif opts.recordmode:
         r = client.set_recordmode(opts.uuid, opts.recordmode,
                                   opts.recordchannel)
