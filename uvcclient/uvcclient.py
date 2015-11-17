@@ -231,7 +231,7 @@ def main():
             print('%s: %-24.24s [%10s]' % (cam['uuid'], cam['name'], status))
     elif opts.recordmode:
         if not opts.uuid:
-            print 'Name or UUID is required'
+            print('Name or UUID is required')
             return 1
 
         r = client.set_recordmode(opts.uuid, opts.recordmode,
