@@ -1,6 +1,9 @@
 Client for Ubiquiti's Unifi Camera NVR
 ======================================
 
+.. image:: https://travis-ci.org/kk7ds/uvcclient.svg?branch=master
+    :target: https://travis-ci.org/kk7ds/uvcclient
+
 This is extremely raw at the moment. Use at your own risk.
 
 Hopefully this is enough to get you going::
