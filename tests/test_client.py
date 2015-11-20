@@ -119,3 +119,41 @@ class TestClient(unittest.TestCase):
             mock_r.side_effect = fake_req
             client.set_recordmode('uuid', 'motion', chan='high')
             self.assertTrue(mock_r.called)
+
+    def test_get_picture_settings(self):
+        fake_resp = {'data': [{'ispSettings': {'settingA': 1,
+                                               'settingB': 'foo'}}]}
+        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        with mock.patch.object(client, '_uvc_request') as mock_r:
+            mock_r.return_value = fake_resp
+            self.assertEqual({'settingA': 1, 'settingB': 'foo'},
+                             client.get_picture_settings('uuid'))
+
+    def test_set_picture_settings(self):
+        fake_resp = {'data': [{'ispSettings': {'settingA': 1,
+                                               'settingB': 'foo'}}]}
+        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        newvals = {'settingA': 2, 'settingB': 'foo'}
+        with mock.patch.object(client, '_uvc_request') as mock_r:
+            mock_r.return_value = fake_resp
+            resp = client.set_picture_settings('uuid', newvals)
+            mock_r.assert_any_call('/api/2.0/camera/uuid', 'PUT',
+                                   json.dumps({'ispSettings': newvals}))
+            self.assertEqual(fake_resp['data'][0]['ispSettings'], resp)
+
+    def test_set_picture_settings_coerces(self):
+        fake_resp = {'data': [{'ispSettings': {'settingA': 1,
+                                               'settingB': 'foo',
+                                               'settingC': False,
+                                           }}]}
+        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        newvals = {'settingA': '2', 'settingB': False, 'settingC': 'foo'}
+        newvals_expected = {'settingA': 2, 'settingB':
+                            'False', 'settingC': True}
+        with mock.patch.object(client, '_uvc_request') as mock_r:
+            mock_r.return_value = fake_resp
+            resp = client.set_picture_settings('uuid', newvals)
+            mock_r.assert_any_call('/api/2.0/camera/uuid', 'PUT',
+                                   json.dumps(
+                                       {'ispSettings': newvals_expected}))
+            self.assertEqual(fake_resp['data'][0]['ispSettings'], resp)

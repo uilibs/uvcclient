@@ -120,6 +120,24 @@ class UVCRemote(object):
         updated = data['data'][0]['recordingSettings']
         return settings == updated
 
+    def get_picture_settings(self, uuid):
+        url = '/api/2.0/camera/%s' % uuid
+        data = self._uvc_request(url)
+        return data['data'][0]['ispSettings']
+
+    def set_picture_settings(self, uuid, settings):
+        url = '/api/2.0/camera/%s' % uuid
+        data = self._uvc_request(url)
+        for key in settings:
+            dtype = type(data['data'][0]['ispSettings'][key])
+            try:
+                data['data'][0]['ispSettings'][key] = dtype(settings[key])
+            except ValueError:
+                raise Invalid('Setting `%s\' requires %s not %s' % (
+                    key, dtype.__name__, type(settings[key]).__name__))
+        data = self._uvc_request(url, 'PUT', json.dumps(data['data'][0]))
+        return data['data'][0]['ispSettings']
+
     def index(self):
         """Return an index of available cameras.
 
@@ -198,6 +216,13 @@ def main():
                       help='Recording mode (none,full,motion)')
     parser.add_option('--recordchannel', default=None,
                       help='Recording channel (high,medium,low)')
+    parser.add_option('-p', '--get-picture-settings', action='store_true',
+                      default=False,
+                      help='Return picture settings as a string')
+    parser.add_option('--set-picture-settings',
+                      default=None,
+                      help=('Set picture settings with a string like that '
+                            'returned from --get-picture-settings'))
     opts, args = parser.parse_args()
 
     if not all([host, port, apikey]):
@@ -240,3 +265,25 @@ def main():
             return 0
         else:
             return 1
+    elif opts.get_picture_settings:
+        settings = client.get_picture_settings(opts.uuid)
+        print(','.join(['%s=%s' % (k, v) for k, v in settings.items()]))
+        return 0
+    elif opts.set_picture_settings:
+        settings = {}
+        try:
+            for setting in opts.set_picture_settings.split(','):
+                k, v = setting.split('=')
+                settings[k] = v
+        except ValueError:
+            print('Invalid picture setting string format')
+            return 1
+        try:
+            result = client.set_picture_settings(opts.uuid, settings)
+        except Invalid as e:
+            print('Invalid value: %s' % e)
+            return 1
+        for k in settings:
+            if type(result[k])(settings[k]) != result[k]:
+                print('Rejected: %s' % k)
+        return 0
