@@ -2,7 +2,7 @@ import unittest
 
 import mock
 
-from uvcclient import uvcclient
+from uvcclient import nvr
 
 
 class TestCliUtils(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestCliUtils(unittest.TestCase):
     @mock.patch('os.getenv')
     def test_get_auth_combined(self, mock_getenv):
         mock_getenv.side_effect = self.FAKE_ENV1.get
-        host, port, key, path = uvcclient.get_auth_from_env()
+        host, port, key, path = nvr.get_auth_from_env()
         self.assertEqual('192.168.1.1', host)
         self.assertEqual(7080, port)
         self.assertEqual('foo', key)
@@ -28,7 +28,7 @@ class TestCliUtils(unittest.TestCase):
     @mock.patch('os.getenv')
     def test_get_separate(self, mock_getenv):
         mock_getenv.side_effect = self.FAKE_ENV2.get
-        host, port, key, path = uvcclient.get_auth_from_env()
+        host, port, key, path = nvr.get_auth_from_env()
         self.assertEqual('192.168.1.2', host)
         self.assertEqual(7443, port)
         self.assertEqual('myKey', key)

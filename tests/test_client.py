@@ -9,7 +9,7 @@ import zlib
 
 import mock
 
-from uvcclient import uvcclient
+from uvcclient import nvr
 
 
 class TestClientLowLevel(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestClientLowLevel(unittest.TestCase):
             i.stop()
 
     def test_uvc_request_get(self):
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         conn = httplib.HTTPConnection.return_value
         resp = conn.getresponse.return_value
         resp.status = 200
@@ -44,7 +44,7 @@ class TestClientLowLevel(unittest.TestCase):
                                              None, headers)
 
     def test_uvc_request_put(self):
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         conn = httplib.HTTPConnection.return_value
         resp = conn.getresponse.return_value
         resp.status = 200
@@ -61,7 +61,7 @@ class TestClientLowLevel(unittest.TestCase):
                                              'foobar', headers)
 
     def test_uvc_request_failed(self):
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         conn = httplib.HTTPConnection.return_value
         resp = conn.getresponse.return_value
         resp.status = 404
@@ -69,7 +69,7 @@ class TestClientLowLevel(unittest.TestCase):
         self.assertEqual(None, result)
 
     def test_uvc_request_deflated(self):
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         conn = httplib.HTTPConnection.return_value
         resp = conn.getresponse.return_value
         resp.status = 200
@@ -104,7 +104,7 @@ class TestClient(unittest.TestCase):
                 self.assertEqual(json.dumps(fake_resp2['data'][0]), data)
                 return fake_resp2
 
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         with mock.patch.object(client, '_uvc_request') as mock_r:
             mock_r.side_effect = fake_req
             client.set_recordmode('uuid', 'full', chan='medium')
@@ -123,7 +123,7 @@ class TestClient(unittest.TestCase):
     def test_get_picture_settings(self):
         fake_resp = {'data': [{'ispSettings': {'settingA': 1,
                                                'settingB': 'foo'}}]}
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         with mock.patch.object(client, '_uvc_request') as mock_r:
             mock_r.return_value = fake_resp
             self.assertEqual({'settingA': 1, 'settingB': 'foo'},
@@ -132,7 +132,7 @@ class TestClient(unittest.TestCase):
     def test_set_picture_settings(self):
         fake_resp = {'data': [{'ispSettings': {'settingA': 1,
                                                'settingB': 'foo'}}]}
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         newvals = {'settingA': 2, 'settingB': 'foo'}
         with mock.patch.object(client, '_uvc_request') as mock_r:
             mock_r.return_value = fake_resp
@@ -146,7 +146,7 @@ class TestClient(unittest.TestCase):
                                                'settingB': 'foo',
                                                'settingC': False,
                                            }}]}
-        client = uvcclient.UVCRemote('foo', 7080, 'key')
+        client = nvr.UVCRemote('foo', 7080, 'key')
         newvals = {'settingA': '2', 'settingB': False, 'settingC': 'foo'}
         newvals_expected = {'settingA': 2, 'settingB':
                             'False', 'settingC': True}

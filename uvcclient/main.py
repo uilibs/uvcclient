@@ -17,11 +17,11 @@
 import logging
 import optparse
 
-import uvcclient
+from uvcclient import nvr
 
 
 def main():
-    host, port, apikey, path = uvcclient.get_auth_from_env()
+    host, port, apikey, path = nvr.get_auth_from_env()
 
     parser = optparse.OptionParser()
     parser.add_option('-H', '--host', default=host,
@@ -58,7 +58,7 @@ def main():
         level = logging.WARNING
     logging.basicConfig(level=level)
 
-    client = uvcclient.UVCRemote(opts.host, opts.port, opts.apikey)
+    client = nvr.UVCRemote(opts.host, opts.port, opts.apikey)
 
     if opts.name:
         opts.uuid = client.name_to_uuid(opts.name)

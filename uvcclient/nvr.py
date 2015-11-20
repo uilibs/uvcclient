@@ -160,6 +160,9 @@ class UVCRemote(object):
         cams_by_name = {x['name']: x['uuid'] for x in cameras}
         return cams_by_name.get(name)
 
+    def get_camera(self, uuid):
+        return self._uvc_request('/api/2.0/camera/%s' % uuid)['data'][0]
+
 
 def get_auth_from_env():
     """Attempt to get UVC NVR connection information from the environment.
