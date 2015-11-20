@@ -19,7 +19,6 @@
 import json
 import logging
 import pprint
-import optparse
 import os
 import sys
 import zlib
@@ -196,101 +195,3 @@ def get_auth_from_env():
         apikey = os.getenv('UVC_APIKEY')
         path = '/'
     return host, port, apikey, path
-
-
-def main():
-    host, port, apikey, path = get_auth_from_env()
-
-    parser = optparse.OptionParser()
-    parser.add_option('-H', '--host', default=host,
-                      help='UVC Hostname')
-    parser.add_option('-P', '--port', default=port, type=int,
-                      help='UVC Port')
-    parser.add_option('-K', '--apikey', default=apikey,
-                      help='UVC API Key')
-    parser.add_option('-v', '--verbose', action='store_true', default=False)
-    parser.add_option('-d', '--dump', action='store_true', default=False)
-    parser.add_option('-u', '--uuid', default=None, help='Camera UUID')
-    parser.add_option('--name', default=None, help='Camera name')
-    parser.add_option('-l', '--list', action='store_true', default=False)
-    parser.add_option('--recordmode', default=None,
-                      help='Recording mode (none,full,motion)')
-    parser.add_option('--recordchannel', default=None,
-                      help='Recording channel (high,medium,low)')
-    parser.add_option('-p', '--get-picture-settings', action='store_true',
-                      default=False,
-                      help='Return picture settings as a string')
-    parser.add_option('--set-picture-settings',
-                      default=None,
-                      help=('Set picture settings with a string like that '
-                            'returned from --get-picture-settings'))
-    opts, args = parser.parse_args()
-
-    if not all([host, port, apikey]):
-        print('Host, port, and apikey are required')
-        return
-
-    if opts.verbose:
-        level = logging.DEBUG
-    else:
-        level = logging.WARNING
-    logging.basicConfig(level=level)
-
-    client = UVCRemote(opts.host, opts.port, opts.apikey)
-
-    if opts.name:
-        opts.uuid = client.name_to_uuid(opts.name)
-        if not opts.uuid:
-            print('`%s\' is not a valid name' % opts.name)
-            return
-
-    if opts.dump:
-        client.dump(opts.uuid)
-    elif opts.list:
-        for cam in client.index():
-            if not cam['managed']:
-                status = 'new'
-            elif cam['state'] == 'FIRMWARE_OUTDATED':
-                status = 'outdated'
-            elif cam['state'] == 'UPGRADING':
-                status = 'upgrading'
-            elif cam['state'] == 'DISCONNECTED':
-                status = 'offline'
-            elif cam['state'] == 'CONNECTED':
-                status = 'online'
-            else:
-                status = 'unknown:%s' % cam['state']
-            print('%s: %-24.24s [%10s]' % (cam['uuid'], cam['name'], status))
-    elif opts.recordmode:
-        if not opts.uuid:
-            print('Name or UUID is required')
-            return 1
-
-        r = client.set_recordmode(opts.uuid, opts.recordmode,
-                                  opts.recordchannel)
-        if r is True:
-            return 0
-        else:
-            return 1
-    elif opts.get_picture_settings:
-        settings = client.get_picture_settings(opts.uuid)
-        print(','.join(['%s=%s' % (k, v) for k, v in settings.items()]))
-        return 0
-    elif opts.set_picture_settings:
-        settings = {}
-        try:
-            for setting in opts.set_picture_settings.split(','):
-                k, v = setting.split('=')
-                settings[k] = v
-        except ValueError:
-            print('Invalid picture setting string format')
-            return 1
-        try:
-            result = client.set_picture_settings(opts.uuid, settings)
-        except Invalid as e:
-            print('Invalid value: %s' % e)
-            return 1
-        for k in settings:
-            if type(result[k])(settings[k]) != result[k]:
-                print('Rejected: %s' % k)
-        return 0
