@@ -147,6 +147,7 @@ class UVCRemote(object):
         return [{'name': x['name'],
                  'uuid': x['uuid'],
                  'state': x['state'],
+                 'managed': x['managed'],
              } for x in cams]
 
     def name_to_uuid(self, name):
@@ -247,7 +248,13 @@ def main():
         client.dump(opts.uuid)
     elif opts.list:
         for cam in client.index():
-            if cam['state'] == 'DISCONNECTED':
+            if not cam['managed']:
+                status = 'new'
+            elif cam['state'] == 'FIRMWARE_OUTDATED':
+                status = 'outdated'
+            elif cam['state'] == 'UPGRADING':
+                status = 'upgrading'
+            elif cam['state'] == 'DISCONNECTED':
                 status = 'offline'
             elif cam['state'] == 'CONNECTED':
                 status = 'online'
