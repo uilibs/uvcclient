@@ -18,6 +18,16 @@ import logging
 import optparse
 
 from uvcclient import nvr
+from uvcclient import camera
+
+
+def do_led(camera_info, enabled):
+    cam_client = camera.UVCCameraClient(camera_info['host'],
+                                        camera_info['username'],
+                                        'ubnt')  # FIXME
+    cam_client.login()
+    print enabled
+    cam_client.set_led(enabled)
 
 
 def main():
@@ -46,6 +56,8 @@ def main():
                       default=None,
                       help=('Set picture settings with a string like that '
                             'returned from --get-picture-settings'))
+    parser.add_option('--set-led', default=None, metavar='ENABLED',
+                      help='Enable/Disable front LED (on,off)')
     opts, args = parser.parse_args()
 
     if not all([host, port, apikey]):
@@ -116,3 +128,12 @@ def main():
             if type(result[k])(settings[k]) != result[k]:
                 print('Rejected: %s' % k)
         return 0
+    elif opts.set_led is not None:
+        camera = client.get_camera(opts.uuid)
+        if not camera:
+            print 'No such camera'
+            return 1
+        if 'Micro' not in camera['model']:
+            print 'Only micro cameras support LED status'
+            return 2
+        do_led(camera, opts.set_led.lower() == 'on')
