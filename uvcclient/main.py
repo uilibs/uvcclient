@@ -26,7 +26,6 @@ def do_led(camera_info, enabled):
                                         camera_info['username'],
                                         'ubnt')  # FIXME
     cam_client.login()
-    print enabled
     cam_client.set_led(enabled)
 
 
@@ -135,10 +134,10 @@ def main():
     elif opts.set_led is not None:
         camera = client.get_camera(opts.uuid)
         if not camera:
-            print 'No such camera'
+            print('No such camera')
             return 1
         if 'Micro' not in camera['model']:
-            print 'Only micro cameras support LED status'
+            print('Only micro cameras support LED status')
             return 2
         do_led(camera, opts.set_led.lower() == 'on')
     elif opts.prune_zones:
