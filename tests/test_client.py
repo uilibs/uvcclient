@@ -157,3 +157,23 @@ class TestClient(unittest.TestCase):
                                    json.dumps(
                                        {'ispSettings': newvals_expected}))
             self.assertEqual(fake_resp['data'][0]['ispSettings'], resp)
+
+    def test_get_zones(self):
+        fake_resp = {'data': [{'zones': ['fake-zone1',
+                                         'fake-zone2']}]}
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        with mock.patch.object(client, '_uvc_request') as mock_r:
+            mock_r.return_value = fake_resp
+            resp = client.list_zones('uuid')
+            mock_r.assert_any_call('/api/2.0/camera/uuid')
+            self.assertEqual(fake_resp['data'][0]['zones'], resp)
+
+    def test_prune_zones(self):
+        fake_resp = {'data': [{'zones': ['fake-zone1',
+                                         'fake-zone2']}]}
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        with mock.patch.object(client, '_uvc_request') as mock_r:
+            mock_r.return_value = fake_resp
+            resp = client.prune_zones('uuid')
+            mock_r.assert_any_call('/api/2.0/camera/uuid', 'PUT',
+                                   json.dumps({'zones': ['fake-zone1']}))

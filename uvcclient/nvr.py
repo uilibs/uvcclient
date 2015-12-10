@@ -137,6 +137,17 @@ class UVCRemote(object):
         data = self._uvc_request(url, 'PUT', json.dumps(data['data'][0]))
         return data['data'][0]['ispSettings']
 
+    def prune_zones(self, uuid):
+        url = '/api/2.0/camera/%s' % uuid
+        data = self._uvc_request(url)
+        data['data'][0]['zones'] = [data['data'][0]['zones'][0]]
+        self._uvc_request(url, 'PUT', json.dumps(data['data'][0]))
+
+    def list_zones(self, uuid):
+        url = '/api/2.0/camera/%s' % uuid
+        data = self._uvc_request(url)
+        return data['data'][0]['zones']
+
     def index(self):
         """Return an index of available cameras.
 

@@ -58,6 +58,10 @@ def main():
                             'returned from --get-picture-settings'))
     parser.add_option('--set-led', default=None, metavar='ENABLED',
                       help='Enable/Disable front LED (on,off)')
+    parser.add_option('--prune-zones', default=None, action='store_true',
+                      help='Prune all but the first motion zone')
+    parser.add_option('--list-zones', default=None, action='store_true',
+                      help='List motion zones')
     opts, args = parser.parse_args()
 
     if not all([host, port, apikey]):
@@ -137,3 +141,15 @@ def main():
             print 'Only micro cameras support LED status'
             return 2
         do_led(camera, opts.set_led.lower() == 'on')
+    elif opts.prune_zones:
+        if not opts.uuid:
+            print('Name or UUID is required')
+            return 1
+        client.prune_zones(opts.uuid)
+    elif opts.list_zones:
+        if not opts.uuid:
+            print('Name or UUID is required')
+            return 1
+        zones = client.list_zones(opts.uuid)
+        for zone in zones:
+            print(zone['name'])
