@@ -65,8 +65,18 @@ class TestClientLowLevel(unittest.TestCase):
         conn = httplib.HTTPConnection.return_value
         resp = conn.getresponse.return_value
         resp.status = 404
-        result = client._uvc_request('/bar', method='PUT', data='foobar')
-        self.assertEqual(None, result)
+        self.assertRaises(nvr.NvrError,
+                          client._uvc_request, '/bar', method='PUT',
+                          data='foobar')
+
+    def test_uvc_request_failed_noauth(self):
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        conn = httplib.HTTPConnection.return_value
+        resp = conn.getresponse.return_value
+        resp.status = 401
+        self.assertRaises(nvr.NotAuthorized,
+                          client._uvc_request, '/bar', method='PUT',
+                          data='foobar')
 
     def test_uvc_request_deflated(self):
         client = nvr.UVCRemote('foo', 7080, 'key')

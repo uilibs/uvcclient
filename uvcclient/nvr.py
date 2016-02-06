@@ -39,6 +39,14 @@ class Invalid(Exception):
     pass
 
 
+class NotAuthorized(Exception):
+    pass
+
+
+class NvrError(Exception):
+    pass
+
+
 class UVCRemote(object):
     """Remote control client for Ubiquiti Unifi Video NVR."""
     CHANNEL_NAMES = ['high', 'medium', 'low']
@@ -72,8 +80,10 @@ class UVCRemote(object):
         headers = dict(resp.getheaders())
         self._log.debug('%s %s Result: %s %s' % (method, url, resp.status,
                                                  resp.reason))
+        if resp.status in (401, 403):
+            raise NotAuthorized('NVR reported authorization failure')
         if resp.status / 100 != 2:
-            return
+            raise NvrError('Request failed: %s' % resp.status)
 
         data = resp.read()
         if (headers.get('content-encoding') == 'gzip' or
