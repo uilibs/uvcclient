@@ -23,6 +23,14 @@ class TestCamera(unittest.TestCase):
             c.set_led(True)
             mock_write.assert_called_once_with('led.front.status', 1)
 
+    def test_get_snapshot(self):
+        c = camera.UVCCameraClient('foo', 'ubnt', 'ubnt')
+        with mock.patch.object(httplib, 'HTTPConnection') as mock_conn:
+            conn = mock_conn.return_value
+            r = c.get_snapshot()
+            self.assertEquals(conn.getresponse.return_value.read.return_value,
+                              r)
+
     def test_cfgwrite(self):
         c = camera.UVCCameraClient('foo', 'ubnt', 'ubnt')
         c._cookie = 'foo-cookie'
@@ -53,7 +61,7 @@ class TestCamera(unittest.TestCase):
         mock_h.side_effect = fake_conn
         cookie = 'thecookie AIROS_SESSIONID=foo; bar'
         first.getresponse.return_value.getheaders.return_value = [
-            ('set-cookie', cookie)]
+            ('Set-Cookie', cookie)]
         second.getresponse.return_value.status = 200
         c.login()
         first.request.assert_called_once_with('GET', '/')
