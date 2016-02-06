@@ -41,7 +41,7 @@ class UVCCameraClient(object):
         conn.request('GET', '/')
         resp = conn.getresponse()
         headers = dict(resp.getheaders())
-        self._cookie = headers['set-cookie']
+        self._cookie = headers['Set-Cookie']
         session = self._cookie.split('=')[1].split(';')[0]
 
         try:
@@ -74,3 +74,10 @@ class UVCCameraClient(object):
 
     def set_led(self, enabled):
         return self._cfgwrite('led.front.status', int(enabled))
+
+    def get_snapshot(self):
+        conn = httplib.HTTPConnection(self._host, self._port)
+        headers = {'Cookie': self._cookie}
+        conn.request('GET', '/snapshot.cgi',
+                     headers=headers)
+        return conn.getresponse().read()
