@@ -54,7 +54,10 @@ class UVCCameraClient(object):
     def login(self):
         resp = self._safe_request('GET', '/')
         headers = dict(resp.getheaders())
-        self._cookie = headers['Set-Cookie']
+        try:
+            self._cookie = headers['Set-Cookie']
+        except KeyError:
+            self._cookie = headers['set-cookie']
         session = self._cookie.split('=')[1].split(';')[0]
 
         try:

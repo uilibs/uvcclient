@@ -168,4 +168,7 @@ def main():
         if not camera:
             print('No such camera')
             return 1
-        sys.stdout.buffer.write(do_snapshot(camera))
+        if hasattr(sys.stdout, 'buffer'):
+            sys.stdout.buffer.write(do_snapshot(camera))
+        else:
+            sys.stdout.write(do_snapshot(camera))
