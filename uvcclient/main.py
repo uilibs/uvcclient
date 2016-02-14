@@ -16,6 +16,7 @@
 
 import logging
 import optparse
+import sys
 
 from uvcclient import nvr
 from uvcclient import camera
@@ -27,6 +28,14 @@ def do_led(camera_info, enabled):
                                         'ubnt')  # FIXME
     cam_client.login()
     cam_client.set_led(enabled)
+
+
+def do_snapshot(camera_info):
+    cam_client = camera.UVCCameraClient(camera_info['host'],
+                                        camera_info['username'],
+                                        'ubnt')  # FIXME
+    cam_client.login()
+    return cam_client.get_snapshot()
 
 
 def main():
@@ -57,6 +66,8 @@ def main():
                             'returned from --get-picture-settings'))
     parser.add_option('--set-led', default=None, metavar='ENABLED',
                       help='Enable/Disable front LED (on,off)')
+    parser.add_option('--get-snapshot', default=None, action='store_true',
+                      help='Get a snapshot image and write to stdout')
     parser.add_option('--prune-zones', default=None, action='store_true',
                       help='Prune all but the first motion zone')
     parser.add_option('--list-zones', default=None, action='store_true',
@@ -152,3 +163,9 @@ def main():
         zones = client.list_zones(opts.uuid)
         for zone in zones:
             print(zone['name'])
+    elif opts.get_snapshot:
+        camera = client.get_camera(opts.uuid)
+        if not camera:
+            print('No such camera')
+            return 1
+        sys.stdout.buffer.write(do_snapshot(camera))
