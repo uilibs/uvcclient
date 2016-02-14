@@ -60,8 +60,27 @@ class UVCRemote(object):
         self._apikey = apikey
         self._log = logging.getLogger('UVC(%s:%s)' % (host, port))
 
-    def _uvc_request(self, path, method='GET', data=None,
-                     mimetype='application/json'):
+    def _safe_request(self, *args, **kwargs):
+        try:
+            conn = httplib.HTTPConnection(self._host, self._port)
+            conn.request(*args, **kwargs)
+            return conn.getresponse()
+        except OSError:
+            raise CameraConnectionError('Unable to contact camera')
+        except httplib.HTTPException as ex:
+            raise CameraConnectionError('Error connecting to camera: %s' % (
+                str(ex)))
+
+    def _uvc_request(self, *args, **kwargs):
+        try:
+            return self._uvc_request_safe(*args, **kwargs)
+        except OSError:
+            raise NvrError('Failed to contact NVR')
+        except httplib.HTTPException as ex:
+            raise NvrError('Error connecting to camera: %s' % str(ex))
+
+    def _uvc_request_safe(self, path, method='GET', data=None,
+                          mimetype='application/json'):
         conn = httplib.HTTPConnection(self._host, self._port)
         if '?' in path:
             url = '%s&apiKey=%s' % (path, self._apikey)
