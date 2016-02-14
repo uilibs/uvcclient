@@ -31,13 +31,17 @@ class CameraConnectError(Exception):
     pass
 
 
+class CameraAuthError(Exception):
+    pass
+
+
 class UVCCameraClient(object):
     def __init__(self, host, username, password, port=80):
         self._host = host
         self._port = port
         self._username = username
         self._password = password
-        self._cookie = None
+        self._cookie = ''
         self._log = logging.getLogger('UVCCamera(%s)' % self._host)
 
     def _safe_request(self, *args, **kwargs):
@@ -73,7 +77,7 @@ class UVCCameraClient(object):
                    'Cookie': self._cookie}
         resp = self._safe_request('POST', '/login.cgi', data, headers)
         if resp.status != 200:
-            raise Exception('Failed to login: %s' % resp.reason)
+            raise CameraAuthError('Failed to login: %s' % resp.reason)
 
     def _cfgwrite(self, setting, value):
         headers = {'Cookie': self._cookie}
@@ -93,4 +97,9 @@ class UVCCameraClient(object):
         headers = {'Cookie': self._cookie}
         resp = self._safe_request('GET', '/snapshot.cgi',
                                   headers=headers)
+        if resp.status in (401, 403, 302):
+            raise CameraAuthError('Not logged in')
+        elif resp.status != 200:
+            raise CameraConnectError(
+                'Snapshot failed: %s' % resp.status)
         return resp.read()
