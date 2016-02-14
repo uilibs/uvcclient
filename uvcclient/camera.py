@@ -50,9 +50,9 @@ class UVCCameraClient(object):
             conn.request(*args, **kwargs)
             return conn.getresponse()
         except OSError:
-            raise CameraConnectionError('Unable to contact camera')
+            raise CameraConnectError('Unable to contact camera')
         except httplib.HTTPException as ex:
-            raise CameraConnectionError('Error connecting to camera: %s' % (
+            raise CameraConnectError('Error connecting to camera: %s' % (
                 str(ex)))
 
     def login(self):
