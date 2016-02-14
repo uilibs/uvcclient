@@ -27,6 +27,10 @@ except ImportError:
     import urllib.parse as urlparse
 
 
+class CameraConnectError(Exception):
+    pass
+
+
 class UVCCameraClient(object):
     def __init__(self, host, username, password, port=80):
         self._host = host
@@ -36,10 +40,19 @@ class UVCCameraClient(object):
         self._cookie = None
         self._log = logging.getLogger('UVCCamera(%s)' % self._host)
 
+    def _safe_request(self, *args, **kwargs):
+        try:
+            conn = httplib.HTTPConnection(self._host, self._port)
+            conn.request(*args, **kwargs)
+            return conn.getresponse()
+        except OSError:
+            raise CameraConnectionError('Unable to contact camera')
+        except httplib.HTTPException as ex:
+            raise CameraConnectionError('Error connecting to camera: %s' % (
+                str(ex)))
+
     def login(self):
-        conn = httplib.HTTPConnection(self._host, self._port)
-        conn.request('GET', '/')
-        resp = conn.getresponse()
+        resp = self._safe_request('GET', '/')
         headers = dict(resp.getheaders())
         self._cookie = headers['Set-Cookie']
         session = self._cookie.split('=')[1].split(';')[0]
@@ -55,18 +68,15 @@ class UVCCameraClient(object):
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "*",
                    'Cookie': self._cookie}
-        conn = httplib.HTTPConnection(self._host, self._port)
-        req = conn.request('POST', '/login.cgi', data, headers)
-        resp = conn.getresponse()
+        resp = self._safe_request('POST', '/login.cgi', data, headers)
         if resp.status != 200:
             raise Exception('Failed to login: %s' % resp.reason)
 
     def _cfgwrite(self, setting, value):
-        conn = httplib.HTTPConnection(self._host, self._port)
         headers = {'Cookie': self._cookie}
-        conn.request('GET', '/cfgwrite.cgi?%s=%s' % (setting, value),
-                     headers=headers)
-        resp = conn.getresponse()
+        resp = self._safe_request(
+            'GET', '/cfgwrite.cgi?%s=%s' % (setting, value),
+            headers=headers)
         self._log.debug('Setting %s=%s: %s %s' % (setting, value,
                                                   resp.status,
                                                   resp.reason))
@@ -78,6 +88,6 @@ class UVCCameraClient(object):
     def get_snapshot(self):
         conn = httplib.HTTPConnection(self._host, self._port)
         headers = {'Cookie': self._cookie}
-        conn.request('GET', '/snapshot.cgi',
-                     headers=headers)
-        return conn.getresponse().read()
+        resp = self._safe_request('GET', '/snapshot.cgi',
+                                  headers=headers)
+        return resp.read()
