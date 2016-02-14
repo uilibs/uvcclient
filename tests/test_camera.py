@@ -27,6 +27,7 @@ class TestCamera(unittest.TestCase):
         c = camera.UVCCameraClient('foo', 'ubnt', 'ubnt')
         with mock.patch.object(httplib, 'HTTPConnection') as mock_conn:
             conn = mock_conn.return_value
+            conn.getresponse.return_value.status = 200
             r = c.get_snapshot()
             self.assertEquals(conn.getresponse.return_value.read.return_value,
                               r)
