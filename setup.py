@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='uvcclient',
-      version='0.7dev',
+      version='0.8.0',
       description='A remote control client for Ubiquiti\'s UVC NVR',
       author='Dan Smith',
       author_email='dsmith+uvcclient@danplanet.com',
