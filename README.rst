@@ -25,6 +25,16 @@ Hopefully this is enough to get you going::
                           Recording mode (none,full,motion)
     --recordchannel=RECORDCHANNEL
                           Recording channel (high,medium,low)
+    -p, --get-picture-settings
+                          Return picture settings as a string
+    --set-picture-settings=SET_PICTURE_SETTINGS
+                          Set picture settings with a string like that returned
+                          from --get-picture-settings
+    --set-led=ENABLED     Enable/Disable front LED (on,off)
+    --get-snapshot        Get a snapshot image and write to stdout
+    --prune-zones         Prune all but the first motion zone
+    --list-zones          List motion zones
+    --set-password        Store camera password
 
 For example::
 
@@ -40,3 +50,21 @@ or::
  998b134e-13ea-4465-ad39-6ad27b067ac4: Spare                    [   offline]
  5474242a-51d5-428e-97de-826675068e70: Front Porch              [    online]
  715f0725-e7e1-4214-a551-41071c82bacd: Garage                   [    online]
+
+In order to take actions on cameras directly (such as change the LED
+state on a UVC Micro or get a snapshot from the camera) you need to
+set the admin password for it. The NVR tells us the username, but we
+must store the password. To do this::
+
+ $ uvc --name Porch --set-password
+ This will store the administrator password for a camera
+ for later use. It will be stored on disk obscured, but
+ NOT ENCRYPTED! If this is not okay, cancel now.
+
+ Password:
+ Confirm:
+ Password set
+
+Then you can do things like get a snapshot from the camera directly::
+
+ $ uvc --name Porch --get-snapshot > foo.jpg
