@@ -14,28 +14,48 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import getpass
 import logging
 import optparse
 import sys
 
 from uvcclient import nvr
 from uvcclient import camera
+from uvcclient import store
+
+INFO_STORE = store.get_info_store()
 
 
 def do_led(camera_info, enabled):
+    password = INFO_STORE.get_camera_password(camera_info['uuid']) or 'ubnt'
     cam_client = camera.UVCCameraClient(camera_info['host'],
                                         camera_info['username'],
-                                        'ubnt')  # FIXME
+                                        password)
     cam_client.login()
     cam_client.set_led(enabled)
 
 
 def do_snapshot(camera_info):
+    password = INFO_STORE.get_camera_password(camera_info['uuid']) or 'ubnt'
     cam_client = camera.UVCCameraClient(camera_info['host'],
                                         camera_info['username'],
-                                        'ubnt')  # FIXME
+                                        password)
     cam_client.login()
     return cam_client.get_snapshot()
+
+
+def do_set_password(opts):
+    print('This will store the administrator password for a camera ')
+    print('for later use. It will be stored on disk obscured, but ')
+    print('NOT ENCRYPTED! If this is not okay, cancel now.')
+    print('')
+    password1 = getpass.getpass('Password: ')
+    password2 = getpass.getpass('Confirm: ')
+    if password1 != password2:
+        print('Passwords do not match')
+        return
+    INFO_STORE.set_camera_password(opts.uuid, password1)
+    print('Password set')
 
 
 def main():
@@ -72,6 +92,8 @@ def main():
                       help='Prune all but the first motion zone')
     parser.add_option('--list-zones', default=None, action='store_true',
                       help='List motion zones')
+    parser.add_option('--set-password', default=None, action='store_true',
+                      help='Store camera password')
     opts, args = parser.parse_args()
 
     if not all([host, port, apikey]):
@@ -172,3 +194,5 @@ def main():
             sys.stdout.buffer.write(do_snapshot(camera))
         else:
             sys.stdout.write(do_snapshot(camera))
+    elif opts.set_password:
+        do_set_password(opts)
