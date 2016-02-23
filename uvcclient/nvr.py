@@ -203,6 +203,15 @@ class UVCRemote(object):
     def get_camera(self, uuid):
         return self._uvc_request('/api/2.0/camera/%s' % uuid)['data'][0]
 
+    def get_snapshot(self, uuid):
+        url = '/api/2.0/snapshot/camera/%s?force=true&apiKey=%s' % (
+            uuid, self._apikey)
+        print(url)
+        resp = self._safe_request('GET', url)
+        if resp.status != 200:
+            raise NvrError('Snapshot returned %i' % resp.status)
+        return resp.read()
+
 
 def get_auth_from_env():
     """Attempt to get UVC NVR connection information from the environment.

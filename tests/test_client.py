@@ -187,3 +187,19 @@ class TestClient(unittest.TestCase):
             resp = client.prune_zones('uuid')
             mock_r.assert_any_call('/api/2.0/camera/uuid', 'PUT',
                                    json.dumps({'zones': ['fake-zone1']}))
+
+    def test_get_snapshot(self):
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        with mock.patch.object(client, '_safe_request') as mock_r:
+            mock_r.return_value.status = 200
+            mock_r.return_value.read.return_value = 'image'
+            resp = client.get_snapshot('foo')
+            mock_r.assert_called_once_with(
+                'GET', '/api/2.0/snapshot/camera/foo?force=true&apiKey=key')
+            self.assertEqual('image', resp)
+
+    def test_get_snapshot_error(self):
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        with mock.patch.object(client, '_safe_request') as mock_r:
+            mock_r.return_value.status = 401
+            self.assertRaises(nvr.NvrError, client.get_snapshot, 'foo')
