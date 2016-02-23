@@ -197,6 +197,6 @@ def main():
         if hasattr(sys.stdout, 'buffer'):
             sys.stdout.buffer.write(do_snapshot(client, camera))
         else:
-            sys.stdout.write(do_snapshot(camera))
+            sys.stdout.write(do_snapshot(client, camera))
     elif opts.set_password:
         do_set_password(opts)
