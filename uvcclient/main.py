@@ -37,9 +37,10 @@ def do_led(camera_info, enabled):
 
 def do_snapshot(camera_info):
     password = INFO_STORE.get_camera_password(camera_info['uuid']) or 'ubnt'
-    cam_client = camera.UVCCameraClient(camera_info['host'],
-                                        camera_info['username'],
-                                        password)
+    cam_cls = camera.camera_class_from_model(camera_info.get('model'))
+    cam_client = cam_cls(camera_info['host'],
+                         camera_info['username'],
+                         password)
     cam_client.login()
     return cam_client.get_snapshot()
 

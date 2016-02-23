@@ -36,6 +36,8 @@ class CameraAuthError(Exception):
 
 
 class UVCCameraClient(object):
+    SNAPSHOT_URL = '/snapshot.cgi'
+
     def __init__(self, host, username, password, port=80):
         self._host = host
         self._port = port
@@ -95,7 +97,7 @@ class UVCCameraClient(object):
     def get_snapshot(self):
         conn = httplib.HTTPConnection(self._host, self._port)
         headers = {'Cookie': self._cookie}
-        resp = self._safe_request('GET', '/snapshot.cgi',
+        resp = self._safe_request('GET', self.SNAPSHOT_URL,
                                   headers=headers)
         if resp.status in (401, 403, 302):
             raise CameraAuthError('Not logged in')
@@ -103,3 +105,14 @@ class UVCCameraClient(object):
             raise CameraConnectError(
                 'Snapshot failed: %s' % resp.status)
         return resp.read()
+
+
+class AirCameraClient(UVCCameraClient):
+    SNAPSHOT_URL = '/snapshot.cgi?chan=1'
+
+
+def camera_class_from_model(model):
+    if 'airCam' in model:
+        return AirCameraClient
+    else:
+        return UVCCameraClient
