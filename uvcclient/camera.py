@@ -14,6 +14,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import socket
 
 # Python3 compatibility
 try:
@@ -49,7 +50,7 @@ class UVCCameraClient(object):
             conn = httplib.HTTPConnection(self._host, self._port)
             conn.request(*args, **kwargs)
             return conn.getresponse()
-        except OSError:
+        except (socket.error, OSError):
             raise CameraConnectError('Unable to contact camera')
         except httplib.HTTPException as ex:
             raise CameraConnectError('Error connecting to camera: %s' % (
