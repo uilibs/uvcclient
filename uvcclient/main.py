@@ -35,13 +35,17 @@ def do_led(camera_info, enabled):
     cam_client.set_led(enabled)
 
 
-def do_snapshot(camera_info):
+def do_snapshot(client, camera_info):
     password = INFO_STORE.get_camera_password(camera_info['uuid']) or 'ubnt'
     cam_client = camera.UVCCameraClient(camera_info['host'],
                                         camera_info['username'],
                                         password)
-    cam_client.login()
-    return cam_client.get_snapshot()
+    try:
+        cam_client.login()
+        return cam_client.get_snapshot()
+    except (camera.CameraAuthError, camera.CameraConnectError):
+        # Fall back to proxy through the NVR
+        return client.get_snapshot(camera_info['uuid'])
 
 
 def do_set_password(opts):
@@ -191,7 +195,7 @@ def main():
             print('No such camera')
             return 1
         if hasattr(sys.stdout, 'buffer'):
-            sys.stdout.buffer.write(do_snapshot(camera))
+            sys.stdout.buffer.write(do_snapshot(client, camera))
         else:
             sys.stdout.write(do_snapshot(camera))
     elif opts.set_password:
