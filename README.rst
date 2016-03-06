@@ -19,6 +19,8 @@ Hopefully this is enough to get you going::
     -v, --verbose
     -d, --dump
     -u UUID, --uuid=UUID  Camera UUID
+    -i id, --id=id        Camera Connection id
+    -c, --connect_with_id Connect using id instead of UUID (NVR Beta API)
     --name=NAME           Camera name
     -l, --list
     --recordmode=RECORDMODE

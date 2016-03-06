@@ -51,10 +51,11 @@ class UVCRemote(object):
     """Remote control client for Ubiquiti Unifi Video NVR."""
     CHANNEL_NAMES = ['high', 'medium', 'low']
 
-    def __init__(self, host, port, apikey, path='/'):
+    def __init__(self, host, port, apikey, path='/', id_connection=False):
         self._host = host
         self._port = port
         self._path = path
+        self.id_connection = id_connection
         if path != '/':
             raise Invalid('Path not supported yet')
         self._apikey = apikey
@@ -115,16 +116,16 @@ class UVCRemote(object):
         data = self._uvc_request('/api/2.0/camera/%s' % uuid)
         pprint.pprint(data)
 
-    def set_recordmode(self, uuid, mode, chan=None):
+    def set_recordmode(self, connection_id, mode, chan=None):
         """Set the recording mode for a camera by UUID.
 
-        :param uuid: Camera UUID
+        :param connection_id: Camera UUID or _id for connecting to camera
         :param mode: One of none, full, or motion
         :param chan: One of the values from CHANNEL_NAMES
         :returns: True if successful, False or None otherwise
         """
 
-        url = '/api/2.0/camera/%s' % uuid
+        url = '/api/2.0/camera/%s' % connection_id
         data = self._uvc_request(url)
         settings = data['data'][0]['recordingSettings']
         mode = mode.lower()
@@ -148,13 +149,13 @@ class UVCRemote(object):
         updated = data['data'][0]['recordingSettings']
         return settings == updated
 
-    def get_picture_settings(self, uuid):
-        url = '/api/2.0/camera/%s' % uuid
+    def get_picture_settings(self, connection_id):
+        url = '/api/2.0/camera/%s' % connection_id
         data = self._uvc_request(url)
         return data['data'][0]['ispSettings']
 
-    def set_picture_settings(self, uuid, settings):
-        url = '/api/2.0/camera/%s' % uuid
+    def set_picture_settings(self, connection_id, settings):
+        url = '/api/2.0/camera/%s' % connection_id
         data = self._uvc_request(url)
         for key in settings:
             dtype = type(data['data'][0]['ispSettings'][key])
@@ -166,14 +167,14 @@ class UVCRemote(object):
         data = self._uvc_request(url, 'PUT', json.dumps(data['data'][0]))
         return data['data'][0]['ispSettings']
 
-    def prune_zones(self, uuid):
-        url = '/api/2.0/camera/%s' % uuid
+    def prune_zones(self, connection_id):
+        url = '/api/2.0/camera/%s' % connection_id
         data = self._uvc_request(url)
         data['data'][0]['zones'] = [data['data'][0]['zones'][0]]
         self._uvc_request(url, 'PUT', json.dumps(data['data'][0]))
 
-    def list_zones(self, uuid):
-        url = '/api/2.0/camera/%s' % uuid
+    def list_zones(self, connection_id):
+        url = '/api/2.0/camera/%s' % connection_id
         data = self._uvc_request(url)
         return data['data'][0]['zones']
 
@@ -185,27 +186,39 @@ class UVCRemote(object):
         cams = self._uvc_request('/api/2.0/camera')['data']
         return [{'name': x['name'],
                  'uuid': x['uuid'],
+                 '_id':  x.get('_id',''),
                  'state': x['state'],
                  'managed': x['managed'],
              } for x in cams]
 
-    def name_to_uuid(self, name):
+    def name_to_connection_id(self, name):
         """Attempt to convert a camera name to its UUID.
 
         :param name: Camera name
         :returns: The UUID of the first camera with the same name if found,
                   otherwise None
         """
+        cams_by_name_id = {}
+        cams_by_name_uuid = {}
+
         cameras = self.index()
-        cams_by_name = {x['name']: x['uuid'] for x in cameras}
-        return cams_by_name.get(name)
+        for camera in cameras:
+            if camera['_id']:
+                cams_by_name_id[camera['name']] = camera['_id']
+            cams_by_name_uuid[camera['name']] = camera['uuid']
+        if self.id_connection:
+            return cams_by_name_id.get(name)
+        else:
+            return cams_by_name_uuid.get(name)
 
-    def get_camera(self, uuid):
-        return self._uvc_request('/api/2.0/camera/%s' % uuid)['data'][0]
 
-    def get_snapshot(self, uuid):
+
+    def get_camera(self, connection_id):
+        return self._uvc_request('/api/2.0/camera/%s' % connection_id)['data'][0]
+
+    def get_snapshot(self, connection_id):
         url = '/api/2.0/snapshot/camera/%s?force=true&apiKey=%s' % (
-            uuid, self._apikey)
+            connection_id, self._apikey)
         print(url)
         resp = self._safe_request('GET', url)
         if resp.status != 200:
@@ -230,6 +243,7 @@ def get_auth_from_env():
     """
 
     combined = os.getenv('UVC')
+    connect_with_id = bool(os.getenv('UVC_CONNECT_WITH_ID'))
     if combined:
         # http://192.168.1.1:7080/apikey
         result = urlparse.urlparse(combined)
@@ -246,4 +260,4 @@ def get_auth_from_env():
         port = int(os.getenv('UVC_PORT', 7080))
         apikey = os.getenv('UVC_APIKEY')
         path = '/'
-    return host, port, apikey, path
+    return host, port, apikey, path, connect_with_id
