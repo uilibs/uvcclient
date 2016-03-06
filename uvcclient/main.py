@@ -72,11 +72,12 @@ def main():
                       help='UVC Port')
     parser.add_option('-K', '--apikey', default=apikey,
                       help='UVC API Key')
-    parser.add_option('-cid', '--connect_with_id', default=connect_with_id,
+    parser.add_option('-c', '--connect_with_id', action="store_true", default=connect_with_id,
                       help='Connect with _id instead of uuid')
     parser.add_option('-v', '--verbose', action='store_true', default=False)
     parser.add_option('-d', '--dump', action='store_true', default=False)
     parser.add_option('-u', '--uuid', default=None, help='Camera UUID')
+    parser.add_option('-i', '--id', default=None, help='Camera connection id')
     parser.add_option('--name', default=None, help='Camera name')
     parser.add_option('-l', '--list', action='store_true', default=False)
     parser.add_option('--recordmode', default=None,
@@ -112,17 +113,11 @@ def main():
         level = logging.WARNING
     logging.basicConfig(level=level)
 
-    client = nvr.UVCRemote(opts.host, opts.port, opts.apikey)
+    cammera_connection_id = ''
 
-    if opts.name:
-        opts.connection_id = client.name_to_connection_id(opts.name)
-        if not opts.connection_id:
-            print('`%s\' is not a valid name' % opts.name)
-            return
+    client = nvr.UVCRemote(opts.host, opts.port, opts.apikey, id_connection=opts.connect_with_id )
 
-    if opts.dump:
-        client.dump(opts.connection_id)
-    elif opts.list:
+    if opts.list:
         for cam in client.index():
             if not cam['managed']:
                 status = 'new'
@@ -137,19 +132,43 @@ def main():
             else:
                 status = 'unknown:%s' % cam['state']
             print('%s: %-24.24s [%10s]' % (cam['uuid'], cam['name'], status))
-    elif opts.recordmode:
-        if not opts.connection_id:
-            print('Name or UUID is required')
+        return 0
+
+    if opts.name:
+        cammera_connection_id = client.name_to_connection_id(opts.name)
+        print("got id {}".format(cammera_connection_id))
+        if not cammera_connection_id:
+            print('`%s\' is not a valid name' % opts.name)
             return 1
 
-        r = client.set_recordmode(opts.connection_id, opts.recordmode,
+    else:
+        if opts.connect_with_id:
+            if not opts.connection_id and not cammera_connection_id:
+                print('Name or connection id is required')
+                return 1
+            else:
+                cammera_connection_id = opts.connection_id
+        else:
+            if not opts.uuid and not cammera_connection_id:
+                print('Name or UUID is required')
+                return 1
+            else:
+                cammera_connection_id = opts.uuid
+
+    if opts.dump:
+        client.dump(cammera_connection_id)
+
+    elif opts.recordmode:
+
+        r = client.set_recordmode(cammera_connection_id, opts.recordmode,
                                   opts.recordchannel)
         if r is True:
             return 0
         else:
             return 1
     elif opts.get_picture_settings:
-        settings = client.get_picture_settings(opts.connection_id)
+        print("connection_id: {}".format(cammera_connection_id))
+        settings = client.get_picture_settings(cammera_connection_id)
         print(','.join(['%s=%s' % (k, v) for k, v in settings.items()]))
         return 0
     elif opts.set_picture_settings:
@@ -162,7 +181,7 @@ def main():
             print('Invalid picture setting string format')
             return 1
         try:
-            result = client.set_picture_settings(opts.connection_id, settings)
+            result = client.set_picture_settings(cammera_connection_id, settings)
         except Invalid as e:
             print('Invalid value: %s' % e)
             return 1
@@ -171,7 +190,7 @@ def main():
                 print('Rejected: %s' % k)
         return 0
     elif opts.set_led is not None:
-        camera = client.get_camera(opts.connection_id)
+        camera = client.get_camera(cammera_connection_id)
         if not camera:
             print('No such camera')
             return 1
@@ -180,19 +199,13 @@ def main():
             return 2
         do_led(camera, opts.set_led.lower() == 'on')
     elif opts.prune_zones:
-        if not opts.connection_id:
-            print('Name or UUID is required')
-            return 1
-        client.prune_zones(opts.connection_id)
+        client.prune_zones(cammera_connection_id)
     elif opts.list_zones:
-        if not opts.connection_id:
-            print('Name or UUID is required')
-            return 1
-        zones = client.list_zones(opts.connection_id)
+        zones = client.list_zones(cammera_connection_id)
         for zone in zones:
             print(zone['name'])
     elif opts.get_snapshot:
-        camera = client.get_camera(opts.connection_id)
+        camera = client.get_camera(cammera_connection_id)
         if not camera:
             print('No such camera')
             return 1

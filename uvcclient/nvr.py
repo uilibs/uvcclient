@@ -51,11 +51,11 @@ class UVCRemote(object):
     """Remote control client for Ubiquiti Unifi Video NVR."""
     CHANNEL_NAMES = ['high', 'medium', 'low']
 
-    def __init__(self, host, port, apikey, path='/', uuid_connection='true'):
+    def __init__(self, host, port, apikey, path='/', id_connection=False):
         self._host = host
         self._port = port
         self._path = path
-        self.uuid_connection = uuid_connection
+        self.id_connection = id_connection
         if path != '/':
             raise Invalid('Path not supported yet')
         self._apikey = apikey
@@ -206,10 +206,11 @@ class UVCRemote(object):
             if camera['_id']:
                 cams_by_name_id[camera['name']] = camera['_id']
             cams_by_name_uuid[camera['name']] = camera['uuid']
-        if self.uuid_connection:
-            return cams_by_name_uuid.get(name)
-        else:
+        if self.id_connection:
             return cams_by_name_id.get(name)
+        else:
+            return cams_by_name_uuid.get(name)
+
 
 
     def get_camera(self, connection_id):
@@ -242,6 +243,7 @@ def get_auth_from_env():
     """
 
     combined = os.getenv('UVC')
+    connect_with_id = bool(os.getenv('UVC_CONNECT_WITH_ID'))
     if combined:
         # http://192.168.1.1:7080/apikey
         result = urlparse.urlparse(combined)
@@ -257,6 +259,5 @@ def get_auth_from_env():
         host = os.getenv('UVC_HOST')
         port = int(os.getenv('UVC_PORT', 7080))
         apikey = os.getenv('UVC_APIKEY')
-        connect_with_id = bool(os.getenv('UVC_CONNECT_WITH_ID'))
         path = '/'
     return host, port, apikey, path, connect_with_id
