@@ -58,12 +58,12 @@ def do_set_password(opts):
     if password1 != password2:
         print('Passwords do not match')
         return
-    INFO_STORE.set_camera_password(opts.uuid, password1)
+    INFO_STORE.set_camera_password(opts.connection_id, password1)
     print('Password set')
 
 
 def main():
-    host, port, apikey, path = nvr.get_auth_from_env()
+    host, port, apikey, path, connect_with_id = nvr.get_auth_from_env()
 
     parser = optparse.OptionParser()
     parser.add_option('-H', '--host', default=host,
@@ -72,6 +72,8 @@ def main():
                       help='UVC Port')
     parser.add_option('-K', '--apikey', default=apikey,
                       help='UVC API Key')
+    parser.add_option('-cid', '--connect_with_id', default=connect_with_id,
+                      help='Connect with _id instead of uuid')
     parser.add_option('-v', '--verbose', action='store_true', default=False)
     parser.add_option('-d', '--dump', action='store_true', default=False)
     parser.add_option('-u', '--uuid', default=None, help='Camera UUID')
@@ -113,13 +115,13 @@ def main():
     client = nvr.UVCRemote(opts.host, opts.port, opts.apikey)
 
     if opts.name:
-        opts.uuid = client.name_to_uuid(opts.name)
-        if not opts.uuid:
+        opts.connection_id = client.name_to_connection_id(opts.name)
+        if not opts.connection_id:
             print('`%s\' is not a valid name' % opts.name)
             return
 
     if opts.dump:
-        client.dump(opts.uuid)
+        client.dump(opts.connection_id)
     elif opts.list:
         for cam in client.index():
             if not cam['managed']:
@@ -136,18 +138,18 @@ def main():
                 status = 'unknown:%s' % cam['state']
             print('%s: %-24.24s [%10s]' % (cam['uuid'], cam['name'], status))
     elif opts.recordmode:
-        if not opts.uuid:
+        if not opts.connection_id:
             print('Name or UUID is required')
             return 1
 
-        r = client.set_recordmode(opts.uuid, opts.recordmode,
+        r = client.set_recordmode(opts.connection_id, opts.recordmode,
                                   opts.recordchannel)
         if r is True:
             return 0
         else:
             return 1
     elif opts.get_picture_settings:
-        settings = client.get_picture_settings(opts.uuid)
+        settings = client.get_picture_settings(opts.connection_id)
         print(','.join(['%s=%s' % (k, v) for k, v in settings.items()]))
         return 0
     elif opts.set_picture_settings:
@@ -160,7 +162,7 @@ def main():
             print('Invalid picture setting string format')
             return 1
         try:
-            result = client.set_picture_settings(opts.uuid, settings)
+            result = client.set_picture_settings(opts.connection_id, settings)
         except Invalid as e:
             print('Invalid value: %s' % e)
             return 1
@@ -169,7 +171,7 @@ def main():
                 print('Rejected: %s' % k)
         return 0
     elif opts.set_led is not None:
-        camera = client.get_camera(opts.uuid)
+        camera = client.get_camera(opts.connection_id)
         if not camera:
             print('No such camera')
             return 1
@@ -178,19 +180,19 @@ def main():
             return 2
         do_led(camera, opts.set_led.lower() == 'on')
     elif opts.prune_zones:
-        if not opts.uuid:
+        if not opts.connection_id:
             print('Name or UUID is required')
             return 1
-        client.prune_zones(opts.uuid)
+        client.prune_zones(opts.connection_id)
     elif opts.list_zones:
-        if not opts.uuid:
+        if not opts.connection_id:
             print('Name or UUID is required')
             return 1
-        zones = client.list_zones(opts.uuid)
+        zones = client.list_zones(opts.connection_id)
         for zone in zones:
             print(zone['name'])
     elif opts.get_snapshot:
-        camera = client.get_camera(opts.uuid)
+        camera = client.get_camera(opts.connection_id)
         if not camera:
             print('No such camera')
             return 1
