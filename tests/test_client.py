@@ -23,6 +23,13 @@ class TestClientLowLevel(unittest.TestCase):
             http_mock = mock.patch('http.client.HTTPConnection')
         http_mock.start()
         self._patches.append(http_mock)
+        bootstrap_mock = mock.patch.object(nvr.UVCRemote, '_get_bootstrap',
+                                           side_effect=self._bootstrap)
+        bootstrap_mock.start()
+        self._patches.append(bootstrap_mock)
+
+    def _bootstrap(self):
+        return {'systemInfo': {'version': '3.1.3'}}
 
     def cleanUp(self):
         for i in self._patches:
@@ -95,7 +102,63 @@ class TestClientLowLevel(unittest.TestCase):
                                              None, headers)
 
 
+class TestClient32(unittest.TestCase):
+    @mock.patch.object(nvr.UVCRemote, '_get_bootstrap')
+    def test_bootstrap_server_version(self, mock_bootstrap):
+        mock_bootstrap.return_value = {'systemInfo': {'version': '3.4.5'}}
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        self.assertEqual((3, 4, 5), client.server_version)
+
+    @mock.patch.object(nvr.UVCRemote, '_get_bootstrap')
+    @mock.patch.object(nvr.UVCRemote, 'index')
+    def test_310_returns_uuid(self, mock_index, mock_bootstrap):
+        mock_index.return_value = [{
+            'name': mock.sentinel.name,
+            'uuid': mock.sentinel.uuid,
+            'id': mock.sentinel.id,
+        }]
+        mock_bootstrap.return_value = {'systemInfo': {'version': '3.1.0'}}
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        self.assertEqual(mock.sentinel.uuid, client.name_to_uuid(
+            mock.sentinel.name))
+
+    @mock.patch.object(nvr.UVCRemote, '_get_bootstrap')
+    @mock.patch.object(nvr.UVCRemote, 'index')
+    def test_320_returns_uuid(self, mock_index, mock_bootstrap):
+        mock_index.return_value = [{
+            'name': mock.sentinel.name,
+            'uuid': mock.sentinel.uuid,
+            'id': mock.sentinel.id,
+        }]
+        mock_bootstrap.return_value = {'systemInfo': {'version': '3.2.0'}}
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        self.assertEqual(mock.sentinel.id, client.name_to_uuid(
+            mock.sentinel.name))
+
+
 class TestClient(unittest.TestCase):
+    def setUp(self):
+        super(TestClient, self).setUp()
+        self._patches = []
+        try:
+            import httplib
+            http_mock = mock.patch('httplib.HTTPConnection')
+        except ImportError:
+            http_mock = mock.patch('http.client.HTTPConnection')
+        http_mock.start()
+        self._patches.append(http_mock)
+        bootstrap_mock = mock.patch.object(nvr.UVCRemote, '_get_bootstrap',
+                                           side_effect=self._bootstrap)
+        bootstrap_mock.start()
+        self._patches.append(bootstrap_mock)
+
+    def _bootstrap(self):
+        return {'systemInfo': {'version': '3.1.3'}}
+
+    def cleanUp(self):
+        for i in self._patches:
+            i.stop()
+
     def test_set_recordmode(self):
         fake_resp1 = {'data': [{'recordingSettings': {
             'fullTimeRecordEnabled': False,

@@ -59,6 +59,15 @@ class UVCRemote(object):
             raise Invalid('Path not supported yet')
         self._apikey = apikey
         self._log = logging.getLogger('UVC(%s:%s)' % (host, port))
+        self._bootstrap = self._get_bootstrap()
+        version = '.'.join(str(x) for x in self.server_version)
+        self._log.debug('Server version is %s' % version)
+
+    @property
+    def server_version(self):
+        return tuple(
+            int(x) for x in self._bootstrap['systemInfo']['version'].split('.')
+        )
 
     def _safe_request(self, *args, **kwargs):
         try:
@@ -109,6 +118,9 @@ class UVCRemote(object):
                 headers.get('Content-Encoding') == 'gzip'):
             data = zlib.decompress(data, 32 + zlib.MAX_WBITS)
         return json.loads(data.decode())
+
+    def _get_bootstrap(self):
+        return self._uvc_request('/api/2.0/bootstrap')['data'][0]
 
     def dump(self, uuid):
         """Dump information for a camera by UUID."""
@@ -187,6 +199,7 @@ class UVCRemote(object):
                  'uuid': x['uuid'],
                  'state': x['state'],
                  'managed': x['managed'],
+                 'id': x['_id'],
              } for x in cams]
 
     def name_to_uuid(self, name):
@@ -194,10 +207,13 @@ class UVCRemote(object):
 
         :param name: Camera name
         :returns: The UUID of the first camera with the same name if found,
-                  otherwise None
+                  otherwise None. On v3.2.0 and later, returns id.
         """
         cameras = self.index()
-        cams_by_name = {x['name']: x['uuid'] for x in cameras}
+        if self.server_version >= (3, 2, 0):
+            cams_by_name = {x['name']: x['id'] for x in cameras}
+        else:
+            cams_by_name = {x['name']: x['uuid'] for x in cameras}
         return cams_by_name.get(name)
 
     def get_camera(self, uuid):
