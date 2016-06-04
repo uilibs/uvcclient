@@ -3,6 +3,7 @@ try:
 except ImportError:
     from http import client as httplib
 
+import json
 import unittest
 
 import mock
@@ -45,7 +46,7 @@ class TestCamera(unittest.TestCase):
                                                  headers=headers)
 
     @mock.patch.object(httplib, 'HTTPConnection')
-    def test_login(self, mock_h):
+    def test_login_v310(self, mock_h):
         c = camera.UVCCameraClient('foo', 'ubnt', 'ubnt')
         first = mock.MagicMock()
         second = mock.MagicMock()
@@ -76,3 +77,19 @@ class TestCamera(unittest.TestCase):
             sorted(second.request.call_args_list[0][0][2].split('&')))
         self.assertEqual(cookie,
                          second.request.call_args_list[0][0][3]['Cookie'])
+
+    @mock.patch.object(httplib, 'HTTPConnection')
+    def test_login_v320(self, mock_h):
+        c = camera.UVCCameraClientV320('foo', 'ubnt', 'ubnt')
+        resp = mock_h.return_value.getresponse.return_value
+        resp.status = 200
+        resp.getheaders.return_value = {'set-cookie': 'cookie'}
+        c.login()
+        self.assertEqual('POST',
+                         mock_h.return_value.request.call_args_list[0][0][0])
+        self.assertEqual('/api/1.1/login',
+                         mock_h.return_value.request.call_args_list[0][0][1])
+        data = json.loads(mock_h.return_value.request.call_args_list[0][0][2])
+        self.assertEqual({'username': 'ubnt', 'password': 'ubnt'},
+                         data)
+        self.assertEqual('cookie', c._cookie)
