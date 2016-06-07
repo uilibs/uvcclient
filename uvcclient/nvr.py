@@ -218,7 +218,7 @@ class UVCRemote(object):
                  'state': x['state'],
                  'managed': x['managed'],
                  'id': x['_id'],
-             } for x in cams]
+             } for x in cams if not x['deleted']]
 
     def name_to_uuid(self, name):
         """Attempt to convert a camera name to its UUID.
