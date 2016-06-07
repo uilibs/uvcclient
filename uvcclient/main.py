@@ -84,6 +84,8 @@ def main():
     parser.add_option('-l', '--list', action='store_true', default=False)
     parser.add_option('--recordmode', default=None,
                       help='Recording mode (none,full,motion)')
+    parser.add_option('--get-recordmode', default=None, action='store_true',
+                      help='Show recording mode')
     parser.add_option('--recordchannel', default=None,
                       help='Recording channel (high,medium,low)')
     parser.add_option('-p', '--get-picture-settings', action='store_true',
@@ -127,6 +129,8 @@ def main():
         client.dump(opts.uuid)
     elif opts.list:
         for cam in client.index():
+            ident = cam[client.camera_identifier]
+            recmode = client.get_recordmode(ident)
             if not cam['managed']:
                 status = 'new'
             elif cam['state'] == 'FIRMWARE_OUTDATED':
@@ -139,7 +143,8 @@ def main():
                 status = 'online'
             else:
                 status = 'unknown:%s' % cam['state']
-            print('%s: %-24.24s [%10s]' % (cam['uuid'], cam['name'], status))
+            print('%s: %-24.24s [%10s] %s' % (cam['uuid'], cam['name'], status,
+                                              recmode))
     elif opts.recordmode:
         if not opts.uuid:
             print('Name or UUID is required')
@@ -151,6 +156,13 @@ def main():
             return 0
         else:
             return 1
+    elif opts.get_recordmode:
+        if not opts.uuid:
+            print('Name or UUID is required')
+            return 1
+        r = client.get_recordmode(opts.uuid)
+        print(r)
+        return r == 'none'
     elif opts.get_picture_settings:
         settings = client.get_picture_settings(opts.uuid)
         print(','.join(['%s=%s' % (k, v) for k, v in settings.items()]))

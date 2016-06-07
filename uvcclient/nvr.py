@@ -69,6 +69,13 @@ class UVCRemote(object):
             int(x) for x in self._bootstrap['systemInfo']['version'].split('.')
         )
 
+    @property
+    def camera_identifier(self):
+        if self.server_version >= (3, 2, 0):
+            return 'id'
+        else:
+            return 'uuid'
+
     def _safe_request(self, *args, **kwargs):
         try:
             conn = httplib.HTTPConnection(self._host, self._port)
@@ -159,6 +166,17 @@ class UVCRemote(object):
         data = self._uvc_request(url, 'PUT', json.dumps(data['data'][0]))
         updated = data['data'][0]['recordingSettings']
         return settings == updated
+
+    def get_recordmode(self, uuid):
+        url = '/api/2.0/camera/%s' % uuid
+        data = self._uvc_request(url)
+        recmodes = data['data'][0]['recordingSettings']
+        if recmodes['fullTimeRecordEnabled']:
+            return 'full'
+        elif recmodes['motionRecordEnabled']:
+            return 'motion'
+        else:
+            return 'none'
 
     def get_picture_settings(self, uuid):
         url = '/api/2.0/camera/%s' % uuid
