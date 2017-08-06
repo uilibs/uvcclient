@@ -110,6 +110,12 @@ class TestClient32(unittest.TestCase):
         self.assertEqual((3, 4, 5), client.server_version)
 
     @mock.patch.object(nvr.UVCRemote, '_get_bootstrap')
+    def test_bootstrap_server_version(self, mock_bootstrap):
+        mock_bootstrap.return_value = {'systemInfo': {'version': '3.4.beta5'}}
+        client = nvr.UVCRemote('foo', 7080, 'key')
+        self.assertEqual((3, 4, 0), client.server_version)
+
+    @mock.patch.object(nvr.UVCRemote, '_get_bootstrap')
     @mock.patch.object(nvr.UVCRemote, 'index')
     def test_310_returns_uuid(self, mock_index, mock_bootstrap):
         mock_index.return_value = [{

@@ -65,9 +65,14 @@ class UVCRemote(object):
 
     @property
     def server_version(self):
-        return tuple(
-            int(x) for x in self._bootstrap['systemInfo']['version'].split('.')
-        )
+        version = self._bootstrap['systemInfo']['version'].split('.')
+        major = int(version[0])
+        minor = int(version[1])
+        try:
+            rev = int(version[2])
+        except ValueError:
+            rev = 0
+        return (major, minor, rev)
 
     @property
     def camera_identifier(self):
