@@ -53,6 +53,27 @@ def do_snapshot(client, camera_info):
         return client.get_snapshot(camera_info['uuid'])
 
 
+def do_reboot(client, camera_info):
+    password = INFO_STORE.get_camera_password(camera_info['uuid']) or 'ubnt'
+    if client.server_version >= (3, 2, 0):
+        cam_client = camera.UVCCameraClientV320(camera_info['host'],
+                                                camera_info['username'],
+                                                password)
+    else:
+        cam_client = camera.UVCCameraClient(camera_info['host'],
+                                            camera_info['username'],
+                                            password)
+    try:
+        cam_client.login()
+        return cam_client.reboot()
+    except camera.CameraAuthError:
+        print('Failed to login to camera')
+    except camera.CameraConnectError:
+        print('Failed to connect to camera')
+    except Exception as e:
+        print('Failed to reboot: %s' % e)
+
+
 def do_set_password(opts):
     print('This will store the administrator password for a camera ')
     print('for later use. It will be stored on disk obscured, but ')
@@ -99,6 +120,8 @@ def main():
                       help='Enable/Disable front LED (on,off)')
     parser.add_option('--get-snapshot', default=None, action='store_true',
                       help='Get a snapshot image and write to stdout')
+    parser.add_option('--reboot', default=None, action='store_true',
+                      help='Reboot camera')
     parser.add_option('--prune-zones', default=None, action='store_true',
                       help='Prune all but the first motion zone')
     parser.add_option('--list-zones', default=None, action='store_true',
@@ -215,5 +238,13 @@ def main():
             sys.stdout.buffer.write(do_snapshot(client, camera))
         else:
             sys.stdout.write(do_snapshot(client, camera))
+    elif opts.reboot:
+        camera = client.get_camera(opts.uuid)
+        if not camera:
+            print('No such camera')
+            return 1
+        do_reboot(client, camera)
     elif opts.set_password:
         do_set_password(opts)
+    else:
+        print('No action specified; try --help')

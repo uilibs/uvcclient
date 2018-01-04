@@ -98,6 +98,10 @@ class UVCCameraClient(object):
     def snapshot_url(self):
         return '/snapshot.cgi'
 
+    @property
+    def reboot_url(self):
+        return '/api/1.1/reboot'
+
     def get_snapshot(self):
         conn = httplib.HTTPConnection(self._host, self._port)
         headers = {'Cookie': self._cookie}
@@ -109,6 +113,17 @@ class UVCCameraClient(object):
             raise CameraConnectError(
                 'Snapshot failed: %s' % resp.status)
         return resp.read()
+
+    def reboot(self):
+        conn = httplib.HTTPConnection(self._host, self._port)
+        headers = {'Cookie': self._cookie}
+        resp = self._safe_request('GET', self.reboot_url,
+                                  headers=headers)
+        if resp.status in (401, 403, 302):
+            raise CameraAuthError('Not logged in')
+        elif resp.status != 200:
+            raise CameraConnectError(
+                'Reboot failed: %s' % resp.status)
 
 
 class UVCCameraClientV320(UVCCameraClient):
