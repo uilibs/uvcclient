@@ -51,10 +51,11 @@ class UVCRemote(object):
     """Remote control client for Ubiquiti Unifi Video NVR."""
     CHANNEL_NAMES = ['high', 'medium', 'low']
 
-    def __init__(self, host, port, apikey, path='/'):
+    def __init__(self, host, port, apikey, path='/', ssl=False):
         self._host = host
         self._port = port
         self._path = path
+        self._ssl = ssl
         if path != '/':
             raise Invalid('Path not supported yet')
         self._apikey = apikey
@@ -80,10 +81,16 @@ class UVCRemote(object):
             return 'id'
         else:
             return 'uuid'
+        
+    def _get_http_connection(self):
+        if self._ssl:
+            return httplib.HTTPSConnection(self._host, self._port)
+        else:
+            return httplib.HTTPConnection(self._host, self._port)
 
     def _safe_request(self, *args, **kwargs):
         try:
-            conn = httplib.HTTPConnection(self._host, self._port)
+            conn = self._get_http_connection();
             conn.request(*args, **kwargs)
             return conn.getresponse()
         except OSError:
@@ -102,7 +109,7 @@ class UVCRemote(object):
 
     def _uvc_request_safe(self, path, method='GET', data=None,
                           mimetype='application/json'):
-        conn = httplib.HTTPConnection(self._host, self._port)
+        conn = self._get_http_connection();
         if '?' in path:
             url = '%s&apiKey=%s' % (path, self._apikey)
         else:
