@@ -10,4 +10,7 @@ setup(name='uvcclient',
       scripts=['uvc'],
       install_requires=[],
       tests_require=['mock'],
+      classifiers=[
+            "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+      ]
 )
