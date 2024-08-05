@@ -28,7 +28,7 @@ class TestStore(unittest.TestCase):
         mock_expand.return_value = "foobar"
         mock_open.side_effect = OSError
         store.InfoStore()
-        mock_open.assert_called_once_with("foobar", "r")
+        mock_open.assert_called_once_with("foobar")
 
     @mock.patch.object(builtins, "open")
     @mock.patch("os.path.expanduser")
@@ -36,7 +36,7 @@ class TestStore(unittest.TestCase):
         mock_open.side_effect = OSError
         store.InfoStore("barfoo")
         self.assertFalse(mock_expand.called)
-        mock_open.assert_called_once_with("barfoo", "r")
+        mock_open.assert_called_once_with("barfoo")
 
     @mock.patch("os.chmod")
     def test_writes_correct_file(self, mock_chmod):
