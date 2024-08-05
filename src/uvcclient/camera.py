@@ -67,7 +67,7 @@ class UVCCameraClient:
 
         try:
             urlencode = urllib.urlencode
-        except NameError:
+        except AttributeError:
             urlencode = urlparse.urlencode
 
         data = urlencode(
