@@ -2,6 +2,17 @@
 
 
 
+## v0.1.1 (2024-08-05)
+
+### Fix
+
+* fix: add back CLI (#12)
+
+* fix: add back CLI
+
+* fix: add back CLI ([`44d24e2`](https://github.com/uilibs/uvcclient/commit/44d24e2a336e8799f993c26f46861d9645fe4a46))
+
+
 ## v0.1.0 (2024-08-05)
 
 ### Feature
