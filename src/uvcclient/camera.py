@@ -15,7 +15,6 @@
 
 import json
 import logging
-import socket
 
 # Python3 compatibility
 try:
@@ -23,8 +22,9 @@ try:
 except ImportError:
     from http import client as httplib
 try:
-    import urlparse
     import urllib
+
+    import urlparse
 except ImportError:
     import urllib.parse as urlparse
 
@@ -37,7 +37,7 @@ class CameraAuthError(Exception):
     pass
 
 
-class UVCCameraClient(object):
+class UVCCameraClient:
     def __init__(self, host, username, password, port=80):
         self._host = host
         self._port = port
@@ -51,7 +51,7 @@ class UVCCameraClient(object):
             conn = httplib.HTTPConnection(self._host, self._port)
             conn.request(*args, **kwargs)
             return conn.getresponse()
-        except (socket.error, OSError):
+        except OSError:
             raise CameraConnectError("Unable to contact camera")
         except httplib.HTTPException as ex:
             raise CameraConnectError("Error connecting to camera: %s" % (str(ex)))

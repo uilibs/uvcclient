@@ -11,7 +11,7 @@ class UnableToManageStore(Exception):
     pass
 
 
-class InfoStore(object):
+class InfoStore:
     def __init__(self, path=None):
         if path is None:
             path = os.path.expanduser(os.path.join("~", ".uvcclient"))
@@ -20,9 +20,9 @@ class InfoStore(object):
 
     def load(self):
         try:
-            with open(self._path, "r") as f:
+            with open(self._path) as f:
                 self._data = json.loads(base64.b64decode(f.read()).decode())
-        except (OSError, IOError):
+        except OSError:
             LOG.debug("No info store")
             self._data = {}
         except Exception as ex:
@@ -34,7 +34,7 @@ class InfoStore(object):
             with open(self._path, "w") as f:
                 f.write(base64.b64encode(json.dumps(self._data).encode()).decode())
             os.chmod(self._path, 0o600)
-        except (OSError, IOError) as ex:
+        except OSError as ex:
             LOG.error("Unable to write store: %s", str(ex))
             raise UnableToManageStore("Unable to write to store")
 

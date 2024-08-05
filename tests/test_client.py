@@ -6,15 +6,14 @@ except ImportError:
 import json
 import unittest
 import zlib
-
-import mock
+from unittest import mock
 
 from uvcclient import nvr
 
 
 class TestClientLowLevel(unittest.TestCase):
     def setUp(self):
-        super(TestClientLowLevel, self).setUp()
+        super().setUp()
         self._patches = []
         try:
             import httplib  # noqa: F401
@@ -146,7 +145,7 @@ class TestClient32(unittest.TestCase):
 
 class TestClient(unittest.TestCase):
     def setUp(self):
-        super(TestClient, self).setUp()
+        super().setUp()
         self._patches = []
         try:
             import httplib  # noqa: F401
