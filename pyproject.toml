@@ -26,7 +26,7 @@ packages = [
 "Changelog" = "https://github.com/uilibs/uvcclient/blob/main/CHANGELOG.md"
 
 [tool.poetry.scripts]
-uvc = "uvc"
+uvc = "uvc:main"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
