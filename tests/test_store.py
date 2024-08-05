@@ -1,6 +1,6 @@
 import contextlib
-import mock
 import unittest
+from unittest import mock
 
 from uvcclient import store
 
@@ -10,7 +10,7 @@ except ImportError:
     import builtins
 
 
-class OpenHelper(object):
+class OpenHelper:
     def __init__(self):
         self.mock = mock.MagicMock()
 

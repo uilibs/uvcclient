@@ -6,8 +6,7 @@ except ImportError:
 import json
 import unittest
 import zlib
-
-import mock
+from unittest import mock
 
 from uvcclient import nvr
 

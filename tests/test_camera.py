@@ -5,8 +5,7 @@ except ImportError:
 
 import json
 import unittest
-
-import mock
+from unittest import mock
 
 from uvcclient import camera
 
@@ -30,7 +29,7 @@ class TestCamera(unittest.TestCase):
             conn = mock_conn.return_value
             conn.getresponse.return_value.status = 200
             r = c.get_snapshot()
-            self.assertEquals(conn.getresponse.return_value.read.return_value, r)
+            self.assertEqual(conn.getresponse.return_value.read.return_value, r)
 
     def test_cfgwrite(self):
         c = camera.UVCCameraClient("foo", "ubnt", "ubnt")
