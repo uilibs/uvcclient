@@ -18,10 +18,9 @@
 
 import json
 import logging
-import pprint
 import os
+import pprint
 import zlib
-
 
 # Python3 compatibility
 try:
@@ -50,7 +49,7 @@ class CameraConnectionError(Exception):
     pass
 
 
-class UVCRemote(object):
+class UVCRemote:
     """Remote control client for Ubiquiti Unifi Video NVR."""
 
     CHANNEL_NAMES = ["high", "medium", "low"]
@@ -151,14 +150,14 @@ class UVCRemote(object):
         pprint.pprint(data)
 
     def set_recordmode(self, uuid, mode, chan=None):
-        """Set the recording mode for a camera by UUID.
+        """
+        Set the recording mode for a camera by UUID.
 
         :param uuid: Camera UUID
         :param mode: One of none, full, or motion
         :param chan: One of the values from CHANNEL_NAMES
         :returns: True if successful, False or None otherwise
         """
-
         url = "/api/2.0/camera/%s" % uuid
         data = self._uvc_request(url)
         settings = data["data"][0]["recordingSettings"]
@@ -225,7 +224,8 @@ class UVCRemote(object):
         return data["data"][0]["zones"]
 
     def index(self):
-        """Return an index of available cameras.
+        """
+        Return an index of available cameras.
 
         :returns: A list of dictionaries with keys of name, uuid
         """
@@ -243,7 +243,8 @@ class UVCRemote(object):
         ]
 
     def name_to_uuid(self, name):
-        """Attempt to convert a camera name to its UUID.
+        """
+        Attempt to convert a camera name to its UUID.
 
         :param name: Camera name
         :returns: The UUID of the first camera with the same name if found,
@@ -269,7 +270,8 @@ class UVCRemote(object):
 
 
 def get_auth_from_env():
-    """Attempt to get UVC NVR connection information from the environment.
+    """
+    Attempt to get UVC NVR connection information from the environment.
 
     Supports either a combined variable called UVC formatted like:
 
@@ -283,7 +285,6 @@ def get_auth_from_env():
 
     :returns: A tuple like (host, port, apikey, path)
     """
-
     combined = os.getenv("UVC")
     if combined:
         # http://192.168.1.1:7080/apikey

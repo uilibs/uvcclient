@@ -19,10 +19,8 @@ import logging
 import optparse
 import sys
 
-from uvcclient import nvr
-from uvcclient import camera
-from uvcclient import store
-from uvcclient.nvr import Invalid
+from . import camera, nvr, store
+from .nvr import Invalid
 
 INFO_STORE = store.get_info_store()
 
