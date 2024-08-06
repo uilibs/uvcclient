@@ -52,7 +52,7 @@ class TestClientLowLevel(unittest.TestCase):
         resp = conn.getresponse.return_value
         resp.status = 200
         resp.read.return_value = json.dumps({}).encode()
-        result = client._uvc_request("/bar?foo=bar", method="PUT", data="foobar")
+        result = client._uvc_request("/bar?foo=bar", method="PUT", data={"foo": "bar"})
         self.assertEqual({}, result)
         headers = {
             "Content-Type": "application/json",
@@ -60,7 +60,7 @@ class TestClientLowLevel(unittest.TestCase):
             "Accept-Encoding": "gzip, deflate, sdch",
         }
         conn.request.assert_called_once_with(
-            "PUT", "/bar?foo=bar&apiKey=key", "foobar", headers
+            "PUT", "/bar?foo=bar&apiKey=key", '{"foo": "bar"}', headers
         )
 
     def test_uvc_request_failed(self):
@@ -69,7 +69,7 @@ class TestClientLowLevel(unittest.TestCase):
         resp = conn.getresponse.return_value
         resp.status = 404
         self.assertRaises(
-            nvr.NvrError, client._uvc_request, "/bar", method="PUT", data="foobar"
+            nvr.NvrError, client._uvc_request, "/bar", method="PUT", data={"foo": "bar"}
         )
 
     def test_uvc_request_failed_noauth(self):
@@ -78,7 +78,11 @@ class TestClientLowLevel(unittest.TestCase):
         resp = conn.getresponse.return_value
         resp.status = 401
         self.assertRaises(
-            nvr.NotAuthorized, client._uvc_request, "/bar", method="PUT", data="foobar"
+            nvr.NotAuthorized,
+            client._uvc_request,
+            "/bar",
+            method="PUT",
+            data={"foo": "bar"},
         )
 
     def test_uvc_request_deflated(self):
