@@ -39,6 +39,7 @@ pytest-sugar = "1.0.0"
 pytest-timeout = "2.3.1"
 pytest-xdist = "3.6.1"
 pytest-cov = "^5.0.0"
+mypy = "^1.11.1"
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:tool.poetry.version"]
@@ -134,3 +135,24 @@ select = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["uvcclient", "tests"]
+
+[tool.mypy]
+disable_error_code = "import-untyped,unused-ignore"
+check_untyped_defs = true
+ignore_missing_imports = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+mypy_path = "src/"
+no_implicit_optional = true
+show_error_codes = true
+warn_unreachable = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+allow_untyped_defs = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

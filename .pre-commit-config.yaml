@@ -6,6 +6,7 @@ default_stages: [commit]
 ci:
   autofix_commit_msg: "chore(pre-commit.ci): auto fixes"
   autoupdate_commit_msg: "chore(pre-commit.ci): pre-commit autoupdate"
+  skip: [mypy]
 
 repos:
   - repo: https://github.com/commitizen-tools/commitizen
@@ -40,3 +41,12 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        language: script
+        entry: ./.bin/run-mypy
+        types_or: [python, pyi]
+        require_serial: true
+        files: ^(src/uvcclient)/.+\.(py|pyi)$

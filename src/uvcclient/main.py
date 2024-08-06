@@ -18,14 +18,15 @@ import getpass
 import logging
 import optparse
 import sys
+from typing import Any
 
 from . import camera, nvr, store
-from .nvr import Invalid
+from .nvr import Invalid, UVCRemote
 
 INFO_STORE = store.get_info_store()
 
 
-def do_led(camera_info, enabled):
+def do_led(camera_info: dict[str, Any], enabled: bool) -> None:
     password = INFO_STORE.get_camera_password(camera_info["uuid"]) or "ubnt"
     cam_client = camera.UVCCameraClient(
         camera_info["host"], camera_info["username"], password
@@ -34,8 +35,9 @@ def do_led(camera_info, enabled):
     cam_client.set_led(enabled)
 
 
-def do_snapshot(client, camera_info):
+def do_snapshot(client: UVCRemote, camera_info: dict[str, Any]) -> bytes:
     password = INFO_STORE.get_camera_password(camera_info["uuid"]) or "ubnt"
+    cam_client: camera.UVCCameraClient
     if client.server_version >= (3, 2, 0):
         cam_client = camera.UVCCameraClientV320(
             camera_info["host"], camera_info["username"], password
@@ -52,8 +54,9 @@ def do_snapshot(client, camera_info):
         return client.get_snapshot(camera_info["uuid"])
 
 
-def do_reboot(client, camera_info):
+def do_reboot(client: UVCRemote, camera_info: dict[str, Any]) -> None:
     password = INFO_STORE.get_camera_password(camera_info["uuid"]) or "ubnt"
+    cam_client: camera.UVCCameraClient
     if client.server_version >= (3, 2, 0):
         cam_client = camera.UVCCameraClientV320(
             camera_info["host"], camera_info["username"], password
@@ -73,7 +76,7 @@ def do_reboot(client, camera_info):
         print(f"Failed to reboot: {e}")
 
 
-def do_set_password(opts):
+def do_set_password(opts: optparse.Values) -> None:
     print("This will store the administrator password for a camera ")
     print("for later use. It will be stored on disk obscured, but ")
     print("NOT ENCRYPTED! If this is not okay, cancel now.")
@@ -87,7 +90,7 @@ def do_set_password(opts):
     print("Password set")
 
 
-def main():
+def main() -> int:
     host, port, apikey, path = nvr.get_auth_from_env()
 
     parser = optparse.OptionParser()
@@ -160,7 +163,7 @@ def main():
 
     if not all([host, port, apikey]):
         print("Host, port, and apikey are required")
-        return
+        return 1
 
     if opts.verbose:
         level = logging.DEBUG
@@ -174,7 +177,7 @@ def main():
         opts.uuid = client.name_to_uuid(opts.name)
         if not opts.uuid:
             print(f"`{opts.name}' is not a valid name")
-            return
+            return 1
 
     if opts.dump:
         client.dump(opts.uuid)
@@ -211,9 +214,9 @@ def main():
         if not opts.uuid:
             print("Name or UUID is required")
             return 1
-        r = client.get_recordmode(opts.uuid)
-        print(r)
-        return r == "none"
+        res = client.get_recordmode(opts.uuid)
+        print(res)
+        return res == "none"
     elif opts.get_picture_settings:
         settings = client.get_picture_settings(opts.uuid)
         print(",".join([f"{k}={v}" for k, v in settings.items()]))
@@ -262,10 +265,7 @@ def main():
         if not camera:
             print("No such camera")
             return 1
-        if hasattr(sys.stdout, "buffer"):
-            sys.stdout.buffer.write(do_snapshot(client, camera))
-        else:
-            sys.stdout.write(do_snapshot(client, camera))
+        sys.stdout.buffer.write(do_snapshot(client, camera))
     elif opts.reboot:
         camera = client.get_camera(opts.uuid)
         if not camera:
@@ -276,3 +276,4 @@ def main():
         do_set_password(opts)
     else:
         print("No action specified; try --help")
+    return 0
