@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.12.0 (2024-08-06)
+
+### Feature
+
+
+- Add typing (#18) ([`c019d8d`](https://github.com/uilibs/uvcclient/commit/c019d8d180744b098db956346dc896fa2db37b82))
+
+
 ## v0.11.4 (2024-08-06)
 
 ### Fix
