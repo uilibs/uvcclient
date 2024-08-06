@@ -27,7 +27,7 @@ class InfoStore:
             self._data = {}
         except Exception as ex:
             LOG.error("Failed to read store data: %s", ex)
-            raise UnableToManageStore("Unable to write to store")
+            raise UnableToManageStore("Unable to write to store") from ex
 
     def save(self):
         try:
@@ -36,7 +36,7 @@ class InfoStore:
             os.chmod(self._path, 0o600)
         except OSError as ex:
             LOG.error("Unable to write store: %s", str(ex))
-            raise UnableToManageStore("Unable to write to store")
+            raise UnableToManageStore("Unable to write to store") from ex
 
     def get_camera_passwords(self):
         return self._data.get("camera_passwords", {})
