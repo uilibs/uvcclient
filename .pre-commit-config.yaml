@@ -45,7 +45,7 @@ repos:
       - id: mypy
         name: mypy
         language: script
-        entry: poetry run mypy src
+        entry: ./.bin/run-mypy
         types_or: [python, pyi]
         require_serial: true
         files: ^(src/uvcclient)/.+\.(py|pyi)$
