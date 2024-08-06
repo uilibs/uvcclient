@@ -96,18 +96,18 @@ class UVCRemote:
             conn = self._get_http_connection()
             conn.request(*args, **kwargs)
             return conn.getresponse()
-        except OSError:
-            raise CameraConnectionError("Unable to contact camera")
+        except OSError as ex:
+            raise CameraConnectionError("Unable to contact camera") from ex
         except httplib.HTTPException as ex:
-            raise CameraConnectionError(f"Error connecting to camera: {ex!s}")
+            raise CameraConnectionError(f"Error connecting to camera: {ex!s}") from ex
 
     def _uvc_request(self, *args, **kwargs):
         try:
             return self._uvc_request_safe(*args, **kwargs)
-        except OSError:
-            raise NvrError("Failed to contact NVR")
+        except OSError as ex:
+            raise NvrError("Failed to contact NVR") from ex
         except httplib.HTTPException as ex:
-            raise NvrError(f"Error connecting to camera: {ex!s}")
+            raise NvrError(f"Error connecting to camera: {ex!s}") from ex
 
     def _uvc_request_safe(
         self, path, method="GET", data=None, mimetype="application/json"
@@ -204,10 +204,10 @@ class UVCRemote:
             dtype = type(data["data"][0]["ispSettings"][key])
             try:
                 data["data"][0]["ispSettings"][key] = dtype(settings[key])
-            except ValueError:
+            except ValueError as ex:
                 raise Invalid(
                     f"Setting `{key}' requires {dtype.__name__} not {type(settings[key]).__name__}"
-                )
+                ) from ex
         data = self._uvc_request(url, "PUT", json.dumps(data["data"][0]))
         return data["data"][0]["ispSettings"]
 
