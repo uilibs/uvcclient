@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "uvcclient"
-version = "0.11.3"
+version = "0.11.4"
 description = "A remote control client for Ubiquiti's UVC NVR"
 authors = ["Dan Smith <dsmith+uvcclient@danplanet.com>"]
 readme = "README.rst"

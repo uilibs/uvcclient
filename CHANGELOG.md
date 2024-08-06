@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.11.4 (2024-08-06)
+
+### Fix
+
+
+- Fix b904 ruff rule (#17) ([`3367c3c`](https://github.com/uilibs/uvcclient/commit/3367c3c2875189a3663f6e77bc6cbc2748704b5e))
+
+
 ## v0.11.3 (2024-08-06)
 
 ### Fix
