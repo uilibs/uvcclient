@@ -44,7 +44,7 @@ class UVCCameraClient:
         self._username = username
         self._password = password
         self._cookie = ""
-        self._log = logging.getLogger("UVCCamera(%s)" % self._host)
+        self._log = logging.getLogger(f"UVCCamera({self._host})")
 
     def _safe_request(self, *args, **kwargs):
         try:
@@ -54,7 +54,7 @@ class UVCCameraClient:
         except OSError:
             raise CameraConnectError("Unable to contact camera")
         except httplib.HTTPException as ex:
-            raise CameraConnectError("Error connecting to camera: %s" % (str(ex)))
+            raise CameraConnectError(f"Error connecting to camera: {ex!s}")
 
     def login(self):
         resp = self._safe_request("GET", "/")
@@ -84,16 +84,14 @@ class UVCCameraClient:
         }
         resp = self._safe_request("POST", "/login.cgi", data, headers)
         if resp.status != 200:
-            raise CameraAuthError("Failed to login: %s" % resp.reason)
+            raise CameraAuthError(f"Failed to login: {resp.reason}")
 
     def _cfgwrite(self, setting, value):
         headers = {"Cookie": self._cookie}
         resp = self._safe_request(
-            "GET", "/cfgwrite.cgi?%s=%s" % (setting, value), headers=headers
+            "GET", f"/cfgwrite.cgi?{setting}={value}", headers=headers
         )
-        self._log.debug(
-            "Setting %s=%s: %s %s" % (setting, value, resp.status, resp.reason)
-        )
+        self._log.debug(f"Setting {setting}={value}: {resp.status} {resp.reason}")
         return resp.status == 200
 
     def set_led(self, enabled):
@@ -117,7 +115,7 @@ class UVCCameraClient:
         if resp.status in (401, 403, 302):
             raise CameraAuthError("Not logged in")
         elif resp.status != 200:
-            raise CameraConnectError("Snapshot failed: %s" % resp.status)
+            raise CameraConnectError(f"Snapshot failed: {resp.status}")
         return resp.read()
 
     def reboot(self):
@@ -126,7 +124,7 @@ class UVCCameraClient:
         if resp.status in (401, 403, 302):
             raise CameraAuthError("Not logged in")
         elif resp.status != 200:
-            raise CameraConnectError("Reboot failed: %s" % resp.status)
+            raise CameraConnectError(f"Reboot failed: {resp.status}")
 
     def get_status(self):
         headers = {"Cookie": self._cookie}
@@ -134,7 +132,7 @@ class UVCCameraClient:
         if resp.status in (401, 403, 302):
             raise CameraAuthError("Not logged in")
         elif resp.status != 200:
-            raise CameraConnectError("Status failed: %s" % resp.status)
+            raise CameraConnectError(f"Status failed: {resp.status}")
         return json.loads(resp.read().decode())
 
 
@@ -148,7 +146,7 @@ class UVCCameraClientV320(UVCCameraClient):
         data = json.dumps({"username": self._username, "password": self._password})
         resp = self._safe_request("POST", "/api/1.1/login", data, headers=headers)
         if resp.status != 200:
-            raise CameraAuthError("Failed to login: %s" % resp.reason)
+            raise CameraAuthError(f"Failed to login: {resp.reason}")
         headers = dict(resp.getheaders())
         try:
             self._cookie = headers["Set-Cookie"]
