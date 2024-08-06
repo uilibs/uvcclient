@@ -1,11 +1,7 @@
-try:
-    import httplib
-except ImportError:
-    from http import client as httplib
-
 import json
 import unittest
 import zlib
+from http import client as httplib
 from unittest import mock
 
 from uvcclient import nvr

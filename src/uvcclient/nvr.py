@@ -20,17 +20,10 @@ import json
 import logging
 import os
 import pprint
+import urllib.parse as urlparse
 import zlib
-
-# Python3 compatibility
-try:
-    import httplib
-except ImportError:
-    from http import client as httplib
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
+from http import client as httplib
+from typing import Any, Literal
 
 
 class Invalid(Exception):
@@ -54,7 +47,9 @@ class UVCRemote:
 
     CHANNEL_NAMES = ["high", "medium", "low"]
 
-    def __init__(self, host, port, apikey, path="/", ssl=False):
+    def __init__(
+        self, host: str, port: int, apikey: str, path: str = "/", ssl: bool = False
+    ) -> None:
         self._host = host
         self._port = port
         self._path = path
@@ -68,7 +63,7 @@ class UVCRemote:
         self._log.debug(f"Server version is {version}")
 
     @property
-    def server_version(self):
+    def server_version(self) -> tuple[int, int, int]:
         version = self._bootstrap["systemInfo"]["version"].split(".")
         major = int(version[0])
         minor = int(version[1])
@@ -79,19 +74,19 @@ class UVCRemote:
         return (major, minor, rev)
 
     @property
-    def camera_identifier(self):
+    def camera_identifier(self) -> str:
         if self.server_version >= (3, 2, 0):
             return "id"
         else:
             return "uuid"
 
-    def _get_http_connection(self):
+    def _get_http_connection(self) -> httplib.HTTPConnection:
         if self._ssl:
             return httplib.HTTPSConnection(self._host, self._port)
         else:
             return httplib.HTTPConnection(self._host, self._port)
 
-    def _safe_request(self, *args, **kwargs):
+    def _safe_request(self, *args: Any, **kwargs: Any) -> httplib.HTTPResponse:
         try:
             conn = self._get_http_connection()
             conn.request(*args, **kwargs)
@@ -101,7 +96,7 @@ class UVCRemote:
         except httplib.HTTPException as ex:
             raise CameraConnectionError(f"Error connecting to camera: {ex!s}") from ex
 
-    def _uvc_request(self, *args, **kwargs):
+    def _uvc_request(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         try:
             return self._uvc_request_safe(*args, **kwargs)
         except OSError as ex:
@@ -110,8 +105,12 @@ class UVCRemote:
             raise NvrError(f"Error connecting to camera: {ex!s}") from ex
 
     def _uvc_request_safe(
-        self, path, method="GET", data=None, mimetype="application/json"
-    ):
+        self,
+        path: str,
+        method: str = "GET",
+        data: dict[str, Any] | None = None,
+        mimetype: str = "application/json",
+    ) -> dict[str, Any]:
         conn = self._get_http_connection()
         if "?" in path:
             url = f"{path}&apiKey={self._apikey}"
@@ -124,7 +123,10 @@ class UVCRemote:
             "Accept-Encoding": "gzip, deflate, sdch",
         }
         self._log.debug(f"{method} {url} headers={headers} data={data!r}")
-        conn.request(method, url, data, headers)
+        body = None
+        if data:
+            body = json.dumps(data)
+        conn.request(method, url, body, headers)
         resp = conn.getresponse()
         headers = dict(resp.getheaders())
         self._log.debug(f"{method} {url} Result: {resp.status} {resp.reason}")
@@ -133,23 +135,23 @@ class UVCRemote:
         if resp.status / 100 != 2:
             raise NvrError(f"Request failed: {resp.status}")
 
-        data = resp.read()
+        res = resp.read()
         if (
             headers.get("content-encoding") == "gzip"
             or headers.get("Content-Encoding") == "gzip"
         ):
-            data = zlib.decompress(data, 32 + zlib.MAX_WBITS)
-        return json.loads(data.decode())
+            res = zlib.decompress(res, 32 + zlib.MAX_WBITS)
+        return json.loads(res.decode())
 
-    def _get_bootstrap(self):
+    def _get_bootstrap(self) -> dict[str, Any]:
         return self._uvc_request("/api/2.0/bootstrap")["data"][0]
 
-    def dump(self, uuid):
+    def dump(self, uuid: str) -> None:
         """Dump information for a camera by UUID."""
         data = self._uvc_request(f"/api/2.0/camera/{uuid}")
         pprint.pprint(data)
 
-    def set_recordmode(self, uuid, mode, chan=None):
+    def set_recordmode(self, uuid: str, mode: str, chan: str | None = None) -> bool:
         """
         Set the recording mode for a camera by UUID.
 
@@ -181,7 +183,7 @@ class UVCRemote:
         updated = data["data"][0]["recordingSettings"]
         return settings == updated
 
-    def get_recordmode(self, uuid):
+    def get_recordmode(self, uuid: str) -> Literal["none", "full", "motion"]:
         url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         recmodes = data["data"][0]["recordingSettings"]
@@ -192,12 +194,14 @@ class UVCRemote:
         else:
             return "none"
 
-    def get_picture_settings(self, uuid):
+    def get_picture_settings(self, uuid: str) -> dict[str, Any]:
         url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         return data["data"][0]["ispSettings"]
 
-    def set_picture_settings(self, uuid, settings):
+    def set_picture_settings(
+        self, uuid: str, settings: dict[str, Any]
+    ) -> dict[str, Any]:
         url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         for key in settings:
@@ -211,18 +215,18 @@ class UVCRemote:
         data = self._uvc_request(url, "PUT", json.dumps(data["data"][0]))
         return data["data"][0]["ispSettings"]
 
-    def prune_zones(self, uuid):
+    def prune_zones(self, uuid: str) -> None:
         url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         data["data"][0]["zones"] = [data["data"][0]["zones"][0]]
         self._uvc_request(url, "PUT", json.dumps(data["data"][0]))
 
-    def list_zones(self, uuid):
+    def list_zones(self, uuid: str) -> list[dict[str, Any]]:
         url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         return data["data"][0]["zones"]
 
-    def index(self):
+    def index(self) -> list[dict[str, Any]]:
         """
         Return an index of available cameras.
 
@@ -241,7 +245,7 @@ class UVCRemote:
             if not x["deleted"]
         ]
 
-    def name_to_uuid(self, name):
+    def name_to_uuid(self, name: str) -> str | None:
         """
         Attempt to convert a camera name to its UUID.
 
@@ -256,10 +260,10 @@ class UVCRemote:
             cams_by_name = {x["name"]: x["uuid"] for x in cameras}
         return cams_by_name.get(name)
 
-    def get_camera(self, uuid):
+    def get_camera(self, uuid: str) -> dict[str, Any]:
         return self._uvc_request(f"/api/2.0/camera/{uuid}")["data"][0]
 
-    def get_snapshot(self, uuid):
+    def get_snapshot(self, uuid: str) -> bytes:
         url = f"/api/2.0/snapshot/camera/{uuid}?force=true&apiKey={self._apikey}"
         print(url)
         resp = self._safe_request("GET", url)
@@ -268,7 +272,7 @@ class UVCRemote:
         return resp.read()
 
 
-def get_auth_from_env():
+def get_auth_from_env() -> tuple[str | None, int, str | None, str]:
     """
     Attempt to get UVC NVR connection information from the environment.
 
@@ -289,16 +293,17 @@ def get_auth_from_env():
         # http://192.168.1.1:7080/apikey
         result = urlparse.urlparse(combined)
         if ":" in result.netloc:
-            host, port = result.netloc.split(":", 1)
-            port = int(port)
+            host, found_port = result.netloc.split(":", 1)
+            port = int(found_port)
         else:
             host = result.netloc
             port = 7080
         apikey = urlparse.parse_qs(result.query)["apiKey"][0]
         path = result.path
+        return host, port, apikey, path
     else:
-        host = os.getenv("UVC_HOST")
-        port = int(os.getenv("UVC_PORT", 7080))
-        apikey = os.getenv("UVC_APIKEY")
-        path = "/"
-    return host, port, apikey, path
+        env_host = os.getenv("UVC_HOST")
+        env_port = int(os.getenv("UVC_PORT", 7080))
+        env_apikey = os.getenv("UVC_APIKEY")
+        env_path = "/"
+        return env_host, env_port, env_apikey, env_path

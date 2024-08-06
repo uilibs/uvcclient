@@ -15,18 +15,9 @@
 
 import json
 import logging
-
-# Python3 compatibility
-try:
-    import httplib
-except ImportError:
-    from http import client as httplib
-try:
-    import urllib
-
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
+import urllib.parse as urlparse
+from http import client as httplib
+from typing import Any
 
 
 class CameraConnectError(Exception):
@@ -38,7 +29,7 @@ class CameraAuthError(Exception):
 
 
 class UVCCameraClient:
-    def __init__(self, host, username, password, port=80):
+    def __init__(self, host: str, username: str, password: str, port: int = 80) -> None:
         self._host = host
         self._port = port
         self._username = username
@@ -46,7 +37,7 @@ class UVCCameraClient:
         self._cookie = ""
         self._log = logging.getLogger(f"UVCCamera({self._host})")
 
-    def _safe_request(self, *args, **kwargs):
+    def _safe_request(self, *args: Any, **kwargs: Any) -> httplib.HTTPResponse:
         try:
             conn = httplib.HTTPConnection(self._host, self._port)
             conn.request(*args, **kwargs)
@@ -56,7 +47,7 @@ class UVCCameraClient:
         except httplib.HTTPException as ex:
             raise CameraConnectError(f"Error connecting to camera: {ex!s}") from ex
 
-    def login(self):
+    def login(self) -> None:
         resp = self._safe_request("GET", "/")
         headers = dict(resp.getheaders())
         try:
@@ -65,10 +56,7 @@ class UVCCameraClient:
             self._cookie = headers["set-cookie"]
         session = self._cookie.split("=")[1].split(";")[0]
 
-        try:
-            urlencode = urllib.urlencode
-        except AttributeError:
-            urlencode = urlparse.urlencode
+        urlencode = urlparse.urlencode
 
         data = urlencode(
             {
@@ -86,7 +74,7 @@ class UVCCameraClient:
         if resp.status != 200:
             raise CameraAuthError(f"Failed to login: {resp.reason}")
 
-    def _cfgwrite(self, setting, value):
+    def _cfgwrite(self, setting: str, value: str | int) -> bool:
         headers = {"Cookie": self._cookie}
         resp = self._safe_request(
             "GET", f"/cfgwrite.cgi?{setting}={value}", headers=headers
@@ -94,22 +82,22 @@ class UVCCameraClient:
         self._log.debug(f"Setting {setting}={value}: {resp.status} {resp.reason}")
         return resp.status == 200
 
-    def set_led(self, enabled):
+    def set_led(self, enabled: bool) -> bool:
         return self._cfgwrite("led.front.status", int(enabled))
 
     @property
-    def snapshot_url(self):
+    def snapshot_url(self) -> str:
         return "/snapshot.cgi"
 
     @property
-    def reboot_url(self):
+    def reboot_url(self) -> str:
         return "/api/1.1/reboot"
 
     @property
-    def status_url(self):
+    def status_url(self) -> str:
         return "/api/1.1/status"
 
-    def get_snapshot(self):
+    def get_snapshot(self) -> bytes:
         headers = {"Cookie": self._cookie}
         resp = self._safe_request("GET", self.snapshot_url, headers=headers)
         if resp.status in (401, 403, 302):
@@ -118,7 +106,7 @@ class UVCCameraClient:
             raise CameraConnectError(f"Snapshot failed: {resp.status}")
         return resp.read()
 
-    def reboot(self):
+    def reboot(self) -> None:
         headers = {"Cookie": self._cookie}
         resp = self._safe_request("GET", self.reboot_url, headers=headers)
         if resp.status in (401, 403, 302):
@@ -126,7 +114,7 @@ class UVCCameraClient:
         elif resp.status != 200:
             raise CameraConnectError(f"Reboot failed: {resp.status}")
 
-    def get_status(self):
+    def get_status(self) -> dict[str, Any]:
         headers = {"Cookie": self._cookie}
         resp = self._safe_request("GET", self.status_url, headers=headers)
         if resp.status in (401, 403, 302):
@@ -138,10 +126,10 @@ class UVCCameraClient:
 
 class UVCCameraClientV320(UVCCameraClient):
     @property
-    def snapshot_url(self):
+    def snapshot_url(self) -> str:
         return "/snap.jpeg"
 
-    def login(self):
+    def login(self) -> None:
         headers = {"Content-Type": "application/json"}
         data = json.dumps({"username": self._username, "password": self._password})
         resp = self._safe_request("POST", "/api/1.1/login", data, headers=headers)

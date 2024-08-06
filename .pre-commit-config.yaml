@@ -40,3 +40,12 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        language: script
+        entry: ./.bin/run-mypy
+        types_or: [python, pyi]
+        require_serial: true
+        files: ^(src/uiprotect)/.+\.(py|pyi)$

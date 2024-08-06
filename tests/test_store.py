@@ -1,13 +1,9 @@
+import builtins
 import contextlib
 import unittest
 from unittest import mock
 
 from uvcclient import store
-
-try:
-    import __builtin__ as builtins
-except ImportError:
-    import builtins
 
 
 class OpenHelper:
