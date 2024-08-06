@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.12.1 (2024-08-06)
+
+### Fix
+
+
+- Add typing classifier (#19) ([`a38dbaf`](https://github.com/uilibs/uvcclient/commit/a38dbaf2995e898165db682f9529037bb50570ef))
+
+
 ## v0.12.0 (2024-08-06)
 
 ### Feature
