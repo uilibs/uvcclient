@@ -62,10 +62,10 @@ class UVCRemote:
         if path != "/":
             raise Invalid("Path not supported yet")
         self._apikey = apikey
-        self._log = logging.getLogger("UVC(%s:%s)" % (host, port))
+        self._log = logging.getLogger(f"UVC({host}:{port})")
         self._bootstrap = self._get_bootstrap()
         version = ".".join(str(x) for x in self.server_version)
-        self._log.debug("Server version is %s" % version)
+        self._log.debug(f"Server version is {version}")
 
     @property
     def server_version(self):
@@ -99,7 +99,7 @@ class UVCRemote:
         except OSError:
             raise CameraConnectionError("Unable to contact camera")
         except httplib.HTTPException as ex:
-            raise CameraConnectionError("Error connecting to camera: %s" % (str(ex)))
+            raise CameraConnectionError(f"Error connecting to camera: {ex!s}")
 
     def _uvc_request(self, *args, **kwargs):
         try:
@@ -107,31 +107,31 @@ class UVCRemote:
         except OSError:
             raise NvrError("Failed to contact NVR")
         except httplib.HTTPException as ex:
-            raise NvrError("Error connecting to camera: %s" % str(ex))
+            raise NvrError(f"Error connecting to camera: {ex!s}")
 
     def _uvc_request_safe(
         self, path, method="GET", data=None, mimetype="application/json"
     ):
         conn = self._get_http_connection()
         if "?" in path:
-            url = "%s&apiKey=%s" % (path, self._apikey)
+            url = f"{path}&apiKey={self._apikey}"
         else:
-            url = "%s?apiKey=%s" % (path, self._apikey)
+            url = f"{path}?apiKey={self._apikey}"
 
         headers = {
             "Content-Type": mimetype,
             "Accept": "application/json, text/javascript, */*; q=0.01",
             "Accept-Encoding": "gzip, deflate, sdch",
         }
-        self._log.debug("%s %s headers=%s data=%s" % (method, url, headers, repr(data)))
+        self._log.debug(f"{method} {url} headers={headers} data={data!r}")
         conn.request(method, url, data, headers)
         resp = conn.getresponse()
         headers = dict(resp.getheaders())
-        self._log.debug("%s %s Result: %s %s" % (method, url, resp.status, resp.reason))
+        self._log.debug(f"{method} {url} Result: {resp.status} {resp.reason}")
         if resp.status in (401, 403):
             raise NotAuthorized("NVR reported authorization failure")
         if resp.status / 100 != 2:
-            raise NvrError("Request failed: %s" % resp.status)
+            raise NvrError(f"Request failed: {resp.status}")
 
         data = resp.read()
         if (
@@ -146,7 +146,7 @@ class UVCRemote:
 
     def dump(self, uuid):
         """Dump information for a camera by UUID."""
-        data = self._uvc_request("/api/2.0/camera/%s" % uuid)
+        data = self._uvc_request(f"/api/2.0/camera/{uuid}")
         pprint.pprint(data)
 
     def set_recordmode(self, uuid, mode, chan=None):
@@ -158,7 +158,7 @@ class UVCRemote:
         :param chan: One of the values from CHANNEL_NAMES
         :returns: True if successful, False or None otherwise
         """
-        url = "/api/2.0/camera/%s" % uuid
+        url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         settings = data["data"][0]["recordingSettings"]
         mode = mode.lower()
@@ -182,7 +182,7 @@ class UVCRemote:
         return settings == updated
 
     def get_recordmode(self, uuid):
-        url = "/api/2.0/camera/%s" % uuid
+        url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         recmodes = data["data"][0]["recordingSettings"]
         if recmodes["fullTimeRecordEnabled"]:
@@ -193,12 +193,12 @@ class UVCRemote:
             return "none"
 
     def get_picture_settings(self, uuid):
-        url = "/api/2.0/camera/%s" % uuid
+        url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         return data["data"][0]["ispSettings"]
 
     def set_picture_settings(self, uuid, settings):
-        url = "/api/2.0/camera/%s" % uuid
+        url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         for key in settings:
             dtype = type(data["data"][0]["ispSettings"][key])
@@ -206,20 +206,19 @@ class UVCRemote:
                 data["data"][0]["ispSettings"][key] = dtype(settings[key])
             except ValueError:
                 raise Invalid(
-                    "Setting `%s' requires %s not %s"
-                    % (key, dtype.__name__, type(settings[key]).__name__)
+                    f"Setting `{key}' requires {dtype.__name__} not {type(settings[key]).__name__}"
                 )
         data = self._uvc_request(url, "PUT", json.dumps(data["data"][0]))
         return data["data"][0]["ispSettings"]
 
     def prune_zones(self, uuid):
-        url = "/api/2.0/camera/%s" % uuid
+        url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         data["data"][0]["zones"] = [data["data"][0]["zones"][0]]
         self._uvc_request(url, "PUT", json.dumps(data["data"][0]))
 
     def list_zones(self, uuid):
-        url = "/api/2.0/camera/%s" % uuid
+        url = f"/api/2.0/camera/{uuid}"
         data = self._uvc_request(url)
         return data["data"][0]["zones"]
 
@@ -258,10 +257,10 @@ class UVCRemote:
         return cams_by_name.get(name)
 
     def get_camera(self, uuid):
-        return self._uvc_request("/api/2.0/camera/%s" % uuid)["data"][0]
+        return self._uvc_request(f"/api/2.0/camera/{uuid}")["data"][0]
 
     def get_snapshot(self, uuid):
-        url = "/api/2.0/snapshot/camera/%s?force=true&apiKey=%s" % (uuid, self._apikey)
+        url = f"/api/2.0/snapshot/camera/{uuid}?force=true&apiKey={self._apikey}"
         print(url)
         resp = self._safe_request("GET", url)
         if resp.status != 200:

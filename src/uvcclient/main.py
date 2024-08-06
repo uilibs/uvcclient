@@ -70,7 +70,7 @@ def do_reboot(client, camera_info):
     except camera.CameraConnectError:
         print("Failed to connect to camera")
     except Exception as e:
-        print("Failed to reboot: %s" % e)
+        print(f"Failed to reboot: {e}")
 
 
 def do_set_password(opts):
@@ -173,7 +173,7 @@ def main():
     if opts.name:
         opts.uuid = client.name_to_uuid(opts.name)
         if not opts.uuid:
-            print("`%s' is not a valid name" % opts.name)
+            print(f"`{opts.name}' is not a valid name")
             return
 
     if opts.dump:
@@ -193,7 +193,7 @@ def main():
             elif cam["state"] == "CONNECTED":
                 status = "online"
             else:
-                status = "unknown:%s" % cam["state"]
+                status = "unknown:{}".format(cam["state"])
             print(
                 "%s: %-24.24s [%10s] %s" % (cam["uuid"], cam["name"], status, recmode)
             )
@@ -216,7 +216,7 @@ def main():
         return r == "none"
     elif opts.get_picture_settings:
         settings = client.get_picture_settings(opts.uuid)
-        print(",".join(["%s=%s" % (k, v) for k, v in settings.items()]))
+        print(",".join([f"{k}={v}" for k, v in settings.items()]))
         return 0
     elif opts.set_picture_settings:
         settings = {}
@@ -230,11 +230,11 @@ def main():
         try:
             result = client.set_picture_settings(opts.uuid, settings)
         except Invalid as e:
-            print("Invalid value: %s" % e)
+            print(f"Invalid value: {e}")
             return 1
         for k in settings:
             if type(result[k])(settings[k]) != result[k]:
-                print("Rejected: %s" % k)
+                print(f"Rejected: {k}")
         return 0
     elif opts.set_led is not None:
         camera = client.get_camera(opts.uuid)
