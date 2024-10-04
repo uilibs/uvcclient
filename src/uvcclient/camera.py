@@ -14,10 +14,11 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
-import logging
 import urllib.parse as urlparse
 from http import client as httplib
 from typing import Any
+
+from uvcclient.const import LOGGER
 
 
 class CameraConnectError(Exception):
@@ -35,7 +36,6 @@ class UVCCameraClient:
         self._username = username
         self._password = password
         self._cookie = ""
-        self._log = logging.getLogger(f"UVCCamera({self._host})")
 
     def _safe_request(self, *args: Any, **kwargs: Any) -> httplib.HTTPResponse:
         try:
@@ -79,7 +79,7 @@ class UVCCameraClient:
         resp = self._safe_request(
             "GET", f"/cfgwrite.cgi?{setting}={value}", headers=headers
         )
-        self._log.debug(f"Setting {setting}={value}: {resp.status} {resp.reason}")
+        LOGGER.debug(f"Setting {setting}={value}: {resp.status} {resp.reason}")
         return resp.status == 200
 
     def set_led(self, enabled: bool) -> bool:

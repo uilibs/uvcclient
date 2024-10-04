@@ -17,13 +17,14 @@
 
 
 import json
-import logging
 import os
 import pprint
 import urllib.parse as urlparse
 import zlib
 from http import client as httplib
 from typing import Any, Literal
+
+from uvcclient.const import LOGGER
 
 
 class Invalid(Exception):
@@ -57,10 +58,9 @@ class UVCRemote:
         if path != "/":
             raise Invalid("Path not supported yet")
         self._apikey = apikey
-        self._log = logging.getLogger(f"UVC({host}:{port})")
         self._bootstrap = self._get_bootstrap()
         version = ".".join(str(x) for x in self.server_version)
-        self._log.debug(f"Server version is {version}")
+        LOGGER.debug(f"Server version is {version}")
 
     @property
     def server_version(self) -> tuple[int, int, int]:
@@ -122,14 +122,14 @@ class UVCRemote:
             "Accept": "application/json, text/javascript, */*; q=0.01",
             "Accept-Encoding": "gzip, deflate, sdch",
         }
-        self._log.debug(f"{method} {url} headers={headers} data={data!r}")
+        LOGGER.debug(f"{method} {url} headers={headers} data={data!r}")
         body = None
         if data:
             body = json.dumps(data)
         conn.request(method, url, body, headers)
         resp = conn.getresponse()
         headers = dict(resp.getheaders())
-        self._log.debug(f"{method} {url} Result: {resp.status} {resp.reason}")
+        LOGGER.debug(f"{method} {url} Result: {resp.status} {resp.reason}")
         if resp.status in (401, 403):
             raise NotAuthorized("NVR reported authorization failure")
         if resp.status / 100 != 2:
