@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.12.2 (2024-10-04)
+
+### Fix
+
+
+- Fix logger name (#27) ([`194232e`](https://github.com/uilibs/uvcclient/commit/194232ebb67915cf7565c98c9d07025f328d7141))
+
+
 ## v0.12.1 (2024-08-06)
 
 ### Fix
