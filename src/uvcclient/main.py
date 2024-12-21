@@ -197,9 +197,7 @@ def main() -> int:
                 status = "online"
             else:
                 status = "unknown:{}".format(cam["state"])
-            print(
-                "%s: %-24.24s [%10s] %s" % (cam["uuid"], cam["name"], status, recmode)
-            )
+            print(f"{cam['uuid']}: {cam['name']:<24.24} [{status:>10}] {recmode}")
     elif opts.recordmode:
         if not opts.uuid:
             print("Name or UUID is required")
