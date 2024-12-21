@@ -268,7 +268,7 @@ class UVCRemote:
         print(url)
         resp = self._safe_request("GET", url)
         if resp.status != 200:
-            raise NvrError("Snapshot returned %i" % resp.status)
+            raise NvrError(f"Snapshot returned {resp.status}")
         return resp.read()
 
 
